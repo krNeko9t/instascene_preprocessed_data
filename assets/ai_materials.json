@@ -1,0 +1,73 @@
+{
+
+    "collision_boundary": [
+      "wall",
+      "floor",
+      "ceiling",
+      "ground",
+      "countertop"
+    ],
+    "rigid_brittle": [
+      "ceramic",
+      "glass",
+      "stone",
+      "granite",
+      "marble",
+      "concrete",
+      "brick",
+      "plaster",
+      "ice"
+    ],
+    "rigid_tough": [
+      "metal",
+      "wood",
+      "hard_plastic"
+    ],
+    "cloth_sheet": [
+      "fabric",
+      "woven_fabric",
+      "knitted_fabric",
+      "felt",
+      "leather",
+      "paper",
+      "cardboard"
+    ],
+    "elastomer": [
+      "rubber",
+      "silicone",
+      "latex",
+      "soft_plastic"
+    ],
+    "foam_porous": [
+      "foam",
+      "sponge",
+      "cork"
+    ],
+    "gel_softbody": [
+      "jelly",
+      "gel",
+      "slime"
+    ],
+    "granular": [
+      "sand",
+      "gravel",
+      "dry_soil",
+      "powder",
+      "dry_snow"
+    ],
+    "cohesive_plastic": [
+      "mud",
+      "clay",
+      "wet_soil",
+      "wet_sand",
+      "packed_snow",
+      "dough",
+      "wax"
+    ],
+    "biological": [
+      "plant_leaf",
+      "plant_stem",
+      "bark",
+      "fruit_flesh"
+    ]
+  }
