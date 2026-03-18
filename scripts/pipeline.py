@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -69,12 +70,54 @@ def _append_error_log(log_path: Path, message: str) -> None:
         f.write(message.rstrip() + "\n")
 
 
+def _safe_token(text: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in text)
+
+
+def _dump_debug_batch(
+    debug_dir: Path,
+    *,
+    object_id: int,
+    batch_index: int,
+    batch: ImageBatch,
+    prompt: str,
+) -> None:
+    object_dir = debug_dir / f"object_{object_id:03d}"
+    object_dir.mkdir(parents=True, exist_ok=True)
+
+    prompt_path = object_dir / f"batch_{batch_index:02d}_prompt.txt"
+    with prompt_path.open("w", encoding="utf-8") as f:
+        f.write(prompt)
+
+    meta = {
+        "object_id": object_id,
+        "batch_index": batch_index,
+        "mode": batch.mode,
+        "num_images": len(batch.images),
+        "images": [
+            {"index": i, "view_name": img.view_name, "variant": img.variant}
+            for i, img in enumerate(batch.images)
+        ],
+    }
+    with (object_dir / f"batch_{batch_index:02d}_meta.json").open("w", encoding="utf-8") as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+
+    for i, img in enumerate(batch.images):
+        image_bytes = base64.b64decode(img.image_base64)
+        view_token = _safe_token(img.view_name)
+        var_token = _safe_token(img.variant)
+        image_path = object_dir / f"batch_{batch_index:02d}_{i:02d}_{view_token}_{var_token}.jpg"
+        with image_path.open("wb") as f:
+            f.write(image_bytes)
+
+
 async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Path:
     scene_data = load_scene(config.data_root, dataset, scene, config.mask_subdir)
     out_dir = config.scene_output_dir(dataset, scene)
     out_dir.mkdir(parents=True, exist_ok=True)
     output_json = out_dir / _model_to_filename(config.model_name)
     error_log = out_dir / "errors.log"
+    debug_dir = out_dir / "debug_inputs"
 
     existing = _load_existing_results(output_json)
     if config.target_object_id is not None:
@@ -105,7 +148,7 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
 
         if config.image_mode == "per_view":
             per_view_outputs = []
-            for batch in batches:
+            for batch_index, batch in enumerate(batches):
                 prompt = _build_prompt(
                     config,
                     dataset=dataset,
@@ -113,6 +156,14 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
                     object_id=obj_id,
                     batch=batch,
                 )
+                if config.save_debug_inputs:
+                    _dump_debug_batch(
+                        debug_dir,
+                        object_id=obj_id,
+                        batch_index=batch_index,
+                        batch=batch,
+                        prompt=prompt,
+                    )
                 text = await client.infer(prompt, batch.images)
                 per_view_outputs.append(
                     {
@@ -130,6 +181,14 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
                 object_id=obj_id,
                 batch=batch,
             )
+            if config.save_debug_inputs:
+                _dump_debug_batch(
+                    debug_dir,
+                    object_id=obj_id,
+                    batch_index=0,
+                    batch=batch,
+                    prompt=prompt,
+                )
             response_payload = await client.infer(prompt, batch.images)
 
         result = ObjectResult(

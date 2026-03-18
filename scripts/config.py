@@ -45,6 +45,7 @@ class PipelineConfig:
     output_dir: str = "vlm_results"
     target_object_id: int | None = None
     single_object_only: bool = False
+    save_debug_inputs: bool = True
 
     @classmethod
     def from_values(
@@ -72,6 +73,7 @@ class PipelineConfig:
         output_dir: str,
         target_object_id: int | None,
         single_object_only: bool,
+        save_debug_inputs: bool,
     ) -> "PipelineConfig":
         return cls(
             data_root=Path(data_root).expanduser().resolve(),
@@ -96,6 +98,7 @@ class PipelineConfig:
             output_dir=output_dir,
             target_object_id=target_object_id,
             single_object_only=single_object_only,
+            save_debug_inputs=save_debug_inputs,
         )
 
     def scene_root(self, dataset: str | None = None, scene: str | None = None) -> Path:
@@ -104,4 +107,9 @@ class PipelineConfig:
         return self.data_root / ds / sc
 
     def scene_output_dir(self, dataset: str | None = None, scene: str | None = None) -> Path:
-        return self.scene_root(dataset, scene) / self.output_dir
+        root = Path(self.output_dir)
+        if not root.is_absolute():
+            root = self.data_root / root
+        ds = dataset or self.dataset
+        sc = scene or self.scene
+        return root / ds / sc

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from datetime import datetime
 from pathlib import Path
 
 
@@ -38,7 +39,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--retry-backoff-seconds", type=float, default=1.5)
     parser.add_argument("--request-timeout-seconds", type=float, default=120.0)
-    parser.add_argument("--output-dir", type=str, default="vlm_results")
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="",
+        help="Run output root directory, default: outputs/run_<timestamp>",
+    )
+    parser.add_argument("--run-name", type=str, default="", help="Optional run name suffix")
     parser.add_argument(
         "--object-id",
         type=int,
@@ -49,6 +56,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--single-object",
         action="store_true",
         help="Only process one object ID (the first pending ID)",
+    )
+    parser.add_argument(
+        "--no-save-debug-inputs",
+        action="store_true",
+        help="Disable saving per-object debug inputs (prompt and sent images)",
     )
     return parser
 
@@ -61,6 +73,11 @@ async def main_async() -> None:
     from pipeline import list_datasets, list_scenes, process_scene
 
     data_root = Path(args.data_root).expanduser().resolve()
+    if args.output_dir.strip():
+        output_dir = args.output_dir
+    else:
+        run_suffix = args.run_name.strip() or datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = f"outputs/run_{run_suffix}"
     cfg = PipelineConfig.from_values(
         data_root=data_root,
         dataset=args.dataset,
@@ -81,9 +98,10 @@ async def main_async() -> None:
         max_retries=args.max_retries,
         retry_backoff_seconds=args.retry_backoff_seconds,
         request_timeout_seconds=args.request_timeout_seconds,
-        output_dir=args.output_dir,
+        output_dir=output_dir,
         target_object_id=args.object_id,
         single_object_only=args.single_object,
+        save_debug_inputs=not args.no_save_debug_inputs,
     )
 
     if (cfg.target_object_id is not None or cfg.single_object_only) and (
