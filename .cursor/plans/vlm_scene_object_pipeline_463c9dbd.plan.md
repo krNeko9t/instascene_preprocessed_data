@@ -4,25 +4,25 @@ overview: 构建一个可配置的 Python pipeline，遍历数据集中每个场
 todos:
   - id: config
     content: 创建 scripts/config.py — 定义所有可配置参数的 dataclass
-    status: pending
+    status: completed
   - id: data-loader
     content: 创建 scripts/data_loader.py — 加载图像/mask，提取物体ID，构建映射
-    status: pending
+    status: completed
   - id: view-selector
     content: 创建 scripts/view_selector.py — 视角质量筛选（像素数/bbox比例/密度）、排序、截取 top-K
-    status: pending
+    status: completed
   - id: image-preparer
     content: 创建 scripts/image_preparer.py — 4种图像准备模式（crop/overlay/pair/per_view）
-    status: pending
+    status: completed
   - id: vlm-client
     content: 创建 scripts/vlm_client.py — OpenAI兼容API封装，支持多图输入、重试、并发控制
-    status: pending
+    status: completed
   - id: pipeline
     content: 创建 scripts/pipeline.py — 主流程编排，断点续传，错误处理
-    status: pending
+    status: completed
   - id: cli
     content: 创建 scripts/run.py — CLI入口 + requirements.txt
-    status: pending
+    status: completed
 isProject: false
 ---
 
