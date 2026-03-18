@@ -39,6 +39,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--retry-backoff-seconds", type=float, default=1.5)
     parser.add_argument("--request-timeout-seconds", type=float, default=120.0)
     parser.add_argument("--output-dir", type=str, default="vlm_results")
+    parser.add_argument(
+        "--object-id",
+        type=int,
+        default=None,
+        help="Only process this object ID in the target scene",
+    )
+    parser.add_argument(
+        "--single-object",
+        action="store_true",
+        help="Only process one object ID (the first pending ID)",
+    )
     return parser
 
 
@@ -71,7 +82,14 @@ async def main_async() -> None:
         retry_backoff_seconds=args.retry_backoff_seconds,
         request_timeout_seconds=args.request_timeout_seconds,
         output_dir=args.output_dir,
+        target_object_id=args.object_id,
+        single_object_only=args.single_object,
     )
+
+    if (cfg.target_object_id is not None or cfg.single_object_only) and (
+        cfg.dataset == "all" or cfg.scene == "all"
+    ):
+        raise ValueError("--object-id / --single-object must be used with a specific --dataset and --scene")
 
     datasets = list_datasets(cfg.data_root) if cfg.dataset == "all" else [cfg.dataset]
     for dataset in datasets:

@@ -1,0 +1,27 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "run",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/run.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--data-root","/home/liaowanjun/Datas/instascene_preprocessed_data",
+                "--dataset","3dovs",
+                "--scene","bench",
+                "--single-object",
+                "--model-name","qwen3-vl-30b-a3b-thinking",
+                "--api-base-url","https://yunwu.ai/v1",
+                "--image-mode","pair"
+            ],
+            "env": {
+                "VLM_API_KEY": "sk-tEU26kKSxG0qpt5iIA85n1a8mDWNt0Pn59yA4BzPQhhP9DPz"
+            }
+        }
+    ]
+}

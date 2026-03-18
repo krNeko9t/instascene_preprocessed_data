@@ -43,6 +43,8 @@ class PipelineConfig:
     retry_backoff_seconds: float = 1.5
     request_timeout_seconds: float = 120.0
     output_dir: str = "vlm_results"
+    target_object_id: int | None = None
+    single_object_only: bool = False
 
     @classmethod
     def from_values(
@@ -68,6 +70,8 @@ class PipelineConfig:
         retry_backoff_seconds: float,
         request_timeout_seconds: float,
         output_dir: str,
+        target_object_id: int | None,
+        single_object_only: bool,
     ) -> "PipelineConfig":
         return cls(
             data_root=Path(data_root).expanduser().resolve(),
@@ -90,6 +94,8 @@ class PipelineConfig:
             retry_backoff_seconds=retry_backoff_seconds,
             request_timeout_seconds=request_timeout_seconds,
             output_dir=output_dir,
+            target_object_id=target_object_id,
+            single_object_only=single_object_only,
         )
 
     def scene_root(self, dataset: str | None = None, scene: str | None = None) -> Path:

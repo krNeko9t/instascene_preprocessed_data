@@ -77,7 +77,17 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
     error_log = out_dir / "errors.log"
 
     existing = _load_existing_results(output_json)
-    pending_ids = [obj_id for obj_id in scene_data.object_ids if obj_id not in existing]
+    if config.target_object_id is not None:
+        if config.target_object_id not in scene_data.object_ids:
+            raise ValueError(
+                f"Object ID {config.target_object_id} not found in {dataset}/{scene}. "
+                f"Available IDs: {scene_data.object_ids[:20]}{'...' if len(scene_data.object_ids) > 20 else ''}"
+            )
+        pending_ids = [config.target_object_id]
+    else:
+        pending_ids = [obj_id for obj_id in scene_data.object_ids if obj_id not in existing]
+        if config.single_object_only and pending_ids:
+            pending_ids = pending_ids[:1]
     if not pending_ids:
         return output_json
 
