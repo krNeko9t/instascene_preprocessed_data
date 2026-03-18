@@ -14,6 +14,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dataset", type=str, default="3dovs", help="Dataset name or 'all'")
     parser.add_argument("--scene", type=str, default="bench", help="Scene name or 'all'")
     parser.add_argument("--mask-subdir", type=str, default="mask")
+    parser.add_argument(
+        "--id-map-source",
+        type=str,
+        default="npy",
+        choices=["npy", "png"],
+        help="ID map source: npy from id_maps/ or png from sam/<mask_subdir>/",
+    )
     parser.add_argument("--min-pixel-count", type=int, default=300)
     parser.add_argument("--min-pixel-ratio", type=float, default=0.15)
     parser.add_argument("--min-bbox-area-ratio", type=float, default=0.002)
@@ -83,6 +90,7 @@ async def main_async() -> None:
         dataset=args.dataset,
         scene=args.scene,
         mask_subdir=args.mask_subdir,
+        id_map_source=args.id_map_source,
         min_pixel_count=args.min_pixel_count,
         min_pixel_ratio=args.min_pixel_ratio,
         min_bbox_area_ratio=args.min_bbox_area_ratio,

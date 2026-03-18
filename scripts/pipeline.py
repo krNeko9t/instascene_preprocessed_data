@@ -112,7 +112,13 @@ def _dump_debug_batch(
 
 
 async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Path:
-    scene_data = load_scene(config.data_root, dataset, scene, config.mask_subdir)
+    scene_data = load_scene(
+        config.data_root,
+        dataset,
+        scene,
+        mask_subdir=config.mask_subdir,
+        id_map_source=config.id_map_source,
+    )
     out_dir = config.scene_output_dir(dataset, scene)
     out_dir.mkdir(parents=True, exist_ok=True)
     output_json = out_dir / _model_to_filename(config.model_name)

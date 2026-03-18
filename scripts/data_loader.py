@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -37,6 +38,23 @@ def _load_mask(mask_path: Path) -> np.ndarray:
     return arr
 
 
+def _load_npy_id_map(id_map_path: Path) -> np.ndarray:
+    arr = np.load(id_map_path)
+    if arr.ndim != 2:
+        raise ValueError(f"ID map should be 2D, got shape {arr.shape} from {id_map_path}")
+    return arr
+
+
+def _resize_mask_to_image(mask: np.ndarray, image_path: Path) -> np.ndarray:
+    with Image.open(image_path) as img:
+        img_w, img_h = img.size
+    mask_h, mask_w = mask.shape[:2]
+    if (mask_w, mask_h) == (img_w, img_h):
+        return mask
+    resized = cv2.resize(mask, (img_w, img_h), interpolation=cv2.INTER_NEAREST)
+    return resized.astype(mask.dtype, copy=False)
+
+
 def _build_image_index(image_dir: Path) -> Dict[str, Path]:
     image_index: Dict[str, Path] = {}
     for path in sorted(image_dir.iterdir()):
@@ -48,39 +66,69 @@ def _build_image_index(image_dir: Path) -> Dict[str, Path]:
     return image_index
 
 
-def load_scene(data_root: Path, dataset: str, scene: str, mask_subdir: str = "mask") -> SceneData:
+def load_scene_from_png(scene_root: Path, image_index: Dict[str, Path], mask_subdir: str) -> tuple[Path, List[Path]]:
+    mask_dir = scene_root / "sam" / mask_subdir
+    if not mask_dir.exists():
+        raise FileNotFoundError(f"Mask directory does not exist: {mask_dir}")
+    mask_files = sorted(p for p in mask_dir.iterdir() if p.is_file() and p.suffix.lower() == ".png")
+    if not mask_files:
+        raise RuntimeError(f"No mask files found in: {mask_dir}")
+    return mask_dir, mask_files
+
+
+def load_scene_from_npy(scene_root: Path, image_index: Dict[str, Path]) -> tuple[Path, List[Path]]:
+    id_map_dir = scene_root / "id_maps"
+    if not id_map_dir.exists():
+        raise FileNotFoundError(f"ID map directory does not exist: {id_map_dir}")
+    id_map_files = sorted(p for p in id_map_dir.iterdir() if p.is_file() and p.suffix.lower() == ".npy")
+    if not id_map_files:
+        raise RuntimeError(f"No npy id maps found in: {id_map_dir}")
+    return id_map_dir, id_map_files
+
+
+def load_scene(
+    data_root: Path,
+    dataset: str,
+    scene: str,
+    mask_subdir: str = "mask",
+    id_map_source: str = "npy",
+) -> SceneData:
     scene_root = data_root / dataset / scene
     image_dir = scene_root / "images"
-    mask_dir = scene_root / "sam" / mask_subdir
 
     if not scene_root.exists():
         raise FileNotFoundError(f"Scene directory does not exist: {scene_root}")
     if not image_dir.exists():
         raise FileNotFoundError(f"Image directory does not exist: {image_dir}")
-    if not mask_dir.exists():
-        raise FileNotFoundError(f"Mask directory does not exist: {mask_dir}")
 
     image_index = _build_image_index(image_dir)
-    mask_files = sorted(p for p in mask_dir.iterdir() if p.is_file() and p.suffix.lower() == ".png")
-    if not mask_files:
-        raise RuntimeError(f"No mask files found in: {mask_dir}")
+    if id_map_source == "npy":
+        map_dir, map_files = load_scene_from_npy(scene_root, image_index)
+    elif id_map_source == "png":
+        map_dir, map_files = load_scene_from_png(scene_root, image_index, mask_subdir)
+    else:
+        raise ValueError(f"Unsupported id_map_source: {id_map_source}")
 
     views: List[ViewRecord] = []
     object_id_set: set[int] = set()
     object_to_views: Dict[int, List[ViewRecord]] = {}
 
-    for mask_path in mask_files:
-        view_name = mask_path.stem
+    for map_path in map_files:
+        view_name = map_path.stem
         image_path = image_index.get(view_name)
         if image_path is None:
             # Skip masks without corresponding image.
             continue
 
-        mask = _load_mask(mask_path)
+        if id_map_source == "npy":
+            mask = _load_npy_id_map(map_path)
+        else:
+            mask = _load_mask(map_path)
+        mask = _resize_mask_to_image(mask, image_path)
         record = ViewRecord(
             view_name=view_name,
             image_path=image_path,
-            mask_path=mask_path,
+            mask_path=map_path,
             mask=mask,
         )
         views.append(record)
@@ -88,7 +136,7 @@ def load_scene(data_root: Path, dataset: str, scene: str, mask_subdir: str = "ma
         unique_ids = np.unique(mask)
         for obj_id in unique_ids:
             int_id = int(obj_id)
-            if int_id == 0:
+            if int_id <= 0:
                 continue
             object_id_set.add(int_id)
             object_to_views.setdefault(int_id, []).append(record)
@@ -102,7 +150,7 @@ def load_scene(data_root: Path, dataset: str, scene: str, mask_subdir: str = "ma
         scene=scene,
         scene_root=scene_root,
         image_dir=image_dir,
-        mask_dir=mask_dir,
+        mask_dir=map_dir,
         views=views,
         object_ids=object_ids,
         object_to_views=object_to_views,

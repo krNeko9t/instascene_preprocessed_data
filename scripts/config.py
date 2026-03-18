@@ -7,6 +7,7 @@ from typing import Literal
 
 ImageMode = Literal["crop_only", "overlay_only", "pair", "per_view"]
 OverlayStyle = Literal["contour", "bbox", "semitransparent", "all"]
+IdMapSource = Literal["npy", "png"]
 
 DEFAULT_PROMPT_TEMPLATE = (
     "You are given images of the same object from multiple views in a scene. "
@@ -27,6 +28,7 @@ class PipelineConfig:
     dataset: str = "3dovs"
     scene: str = "bench"
     mask_subdir: str = "mask"
+    id_map_source: IdMapSource = "npy"
     min_pixel_count: int = 300
     min_pixel_ratio: float = 0.15
     min_bbox_area_ratio: float = 0.002
@@ -55,6 +57,7 @@ class PipelineConfig:
         dataset: str,
         scene: str,
         mask_subdir: str,
+        id_map_source: IdMapSource,
         min_pixel_count: int,
         min_pixel_ratio: float,
         min_bbox_area_ratio: float,
@@ -80,6 +83,7 @@ class PipelineConfig:
             dataset=dataset,
             scene=scene,
             mask_subdir=mask_subdir,
+            id_map_source=id_map_source,
             min_pixel_count=min_pixel_count,
             min_pixel_ratio=min_pixel_ratio,
             min_bbox_area_ratio=min_bbox_area_ratio,

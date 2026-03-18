@@ -4,3 +4,5 @@ lerf/
 zipnerf/
 *.py[cod]
 *__pycache__*
+outputs/
+debug/
