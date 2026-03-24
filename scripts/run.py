@@ -34,7 +34,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--overlay-style",
         type=str,
-        default="all",
+        default="bbox",
         choices=["contour", "bbox", "semitransparent", "all"],
     )
     parser.add_argument("--crop-padding-ratio", type=float, default=0.15)

@@ -1,0 +1,47 @@
+You are given images of an object instance highlighted in a scene from {n_views} viewpoint(s). In each viewpoints the object is marked with a blue bounding box and red contour; a white-background cropped version of the instance is also provided.
+
+Your task: extract an instance-level physical simulation intermediate representation for the highlighted object based on what is **visually observable** and what can be **reasonably inferred from common sense**. Predict each of the following fields.
+
+### Fields to predict
+
+**1. object_description** (string)
+A concise one-sentence English caption describing what this object looks like.
+
+**2. scene_role** (enum)
+The role of this instance in a whole-scene animation simulation.
+- "static_boundary" — Acts as a static collision boundary; does not actively participate in simulation. Typical examples: wall, floor, ceiling, fixed cabinet, built-in countertop.
+- "simulatable" — Can theoretically participate in animation-level simulation as an independent object. Typical examples: chair, curtain, pillow, cup, book, rope, towel.
+- "ignore" — Should be ignored in the current simulation version. Typical examples: far background, tiny fragment, unreliable clutter.
+- "unknown" — Insufficient evidence to determine.
+
+**3. geometry_form** (enum)
+The geometric / structural appearance type. Prioritize the category most useful for downstream simulation.
+- "solid" — Block-like, clearly solid. Typical examples: chair, book, box, toy block. Good for rigid-body or solid templates.
+- "hollow" — Clearly hollow / container structure. Typical examples: cup, bucket, pot, empty cardboard box. Good for hollow collision or container templates.
+- "thin_sheet" — Thin sheet / surface. Typical examples: curtain, towel, bed sheet, paper, plastic bag, shirt. Good for cloth/shell agents.
+- "filamentary" — Elongated, thread-like. Typical examples: rope, cable, wire, drawstring. Good for rope/strand agents.
+- "stuffed" — Filled soft object, puffy appearance. Typical examples: pillow, cushion, stuffed toy, foam pad. Good for soft/stuffed templates.
+- "uncertain" — Cannot reliably determine (e.g. severe occlusion).
+
+**4. attachment_relation** (enum)
+How this instance is connected or constrained to the environment / other objects. This field only answers "how it is attached", NOT "what supports it". Distinguish support from attachment.
+- "free" — No obvious fixation; just placed or in contact. Typical examples: cup on table, book on shelf, chair on floor.
+- "partially_attached" — Partially connected; the rest can move. Typical examples: curtain attached at top rod, cloth partially trapped under an object.
+- "pinned_or_fixed" — Basically fixed; should not move freely. Typical examples: wall painting, fixed mirror, built-in panel.
+- "hinged" — Has a rotational axis / hinge-like connection. Typical examples: door, cabinet door, flip cover.
+- "embedded_or_wrapped" — Embedded, threaded through, wound around, or wrapped. Typical examples: wire passing through hole, rope wrapped around pole.
+- "uncertain" — Cannot reliably determine.
+
+**5. appearance_material_topk** (array of 1–3 objects)
+Top-k material prototypes based on visual evidence and interaction common sense. NOT a composition decomposition or real mass ratio. Each item: {{"prototype": "<name>", "score": <float 0–1>}}. Score represents confidence / match degree.
+Available prototypes:
+["wood", "metal", "brittle_mineral", "rigid_plastic", "flexible_plastic", "rubber", "fabric", "paper_fiber", "foam", "leather", "organic_soft", "liquid", "granular", "unknown"]
+
+**6. physical_priors** (object with up to 3 sub-fields)
+Each sub-field has "value" (enum) and "confidence" (float 0–1).
+- "heaviness_bin": one of ["very_light", "light", "medium", "heavy", "very_heavy", "unknown"]
+- "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
+- "surface_friction_bin": one of ["very_smooth", "smooth", "medium", "rough", "very_rough", "unknown"]
+
+### Output format
+Return ONLY a single valid JSON object (no markdown fences, no explanation before or after). 

@@ -1,0 +1,21 @@
+You are given images of an object instance highlighted in a scene from {n_views} viewpoint(s). In each viewpoints the object is marked with a blue bounding box; a white-background crop is also provided.
+
+Extract a physical simulation intermediate representation as a JSON object with these fields:
+
+1. "object_description": string — one-sentence caption of the object.
+2. "scene_role": one of ["static_boundary", "simulatable_object", "ignore", "unknown"]
+3. "geometry_form": one of ["solid", "hollow", "thin_sheet", "filamentary", "stuffed", "uncertain"]
+4. "attachment_relation": one of ["free", "partially_attached", "pinned_or_fixed", "hinged", "embedded_or_wrapped", "uncertain"]
+5. "appearance_materials": array of 1–3 items, each {{"prototype": <name>, "score": <float 0–1>}}
+   Available prototypes: ["wood", "metal", "brittle_mineral", "rigid_plastic", "flexible_plastic", "rubber", "fabric", "paper_fiber", "foam", "leather", "organic_soft", "liquid", "granular", "unknown"]
+6. "physical_priors": object with 3 sub-fields, each {{"value": <enum>, "confidence": <float 0–1>}}
+   - "heaviness_bin": one of ["very_light", "light", "medium", "heavy", "very_heavy", "unknown"]
+   - "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
+   - "surface_friction_bin": one of ["low", "medium", "high", "unknown"]
+
+Return ONLY valid JSON. No markdown fences, no explanation.
+
+Object ID: {object_id}
+Number of views: {n_views}
+View names: {view_names}
+Image input mode: {image_mode}
