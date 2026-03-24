@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
-from dataclasses import asdict, dataclass
+import re
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
@@ -22,6 +23,35 @@ class ObjectResult:
     response: Any
     n_views: int
     mode: str
+    parsed_json: Optional[Dict[str, Any]] = field(default=None)
+
+
+def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
+    """Try to extract and parse a JSON object from VLM response text."""
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        match = re.search(r"```(?:json)?\s*\n?(.*?)```", stripped, re.DOTALL)
+        if match:
+            stripped = match.group(1).strip()
+    try:
+        obj = json.loads(stripped)
+        if isinstance(obj, dict):
+            return obj
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r"\{.*\}", stripped, re.DOTALL)
+    if match:
+        try:
+            obj = json.loads(match.group(0))
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+def _make_instance_id(dataset: str, scene: str, object_id: int) -> str:
+    return f"{dataset}_{scene}_inst{object_id:03d}"
 
 
 def _model_to_filename(model_name: str) -> str:
@@ -197,11 +227,16 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
                 )
             response_payload = await client.infer(prompt, batch.images)
 
+        parsed = None
+        if isinstance(response_payload, str):
+            parsed = _try_parse_json(response_payload)
+
         result = ObjectResult(
             id=obj_id,
             response=response_payload,
             n_views=len(views),
             mode=config.image_mode,
+            parsed_json=parsed,
         )
         async with lock:
             new_results.append(result)
@@ -219,7 +254,18 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
 
     merged: Dict[int, Dict[str, Any]] = {**existing}
     for result in new_results:
-        merged[result.id] = asdict(result)
+        entry: Dict[str, Any] = {
+            "id": result.id,
+            "instance_id": _make_instance_id(dataset, scene, result.id),
+            "n_views": result.n_views,
+            "mode": result.mode,
+        }
+        if result.parsed_json is not None:
+            entry["response"] = result.parsed_json
+        else:
+            entry["response"] = result.response
+            entry["parse_failed"] = True
+        merged[result.id] = entry
     sorted_results = [merged[obj_id] for obj_id in sorted(merged)]
     with output_json.open("w", encoding="utf-8") as f:
         json.dump(sorted_results, f, ensure_ascii=False, indent=2)

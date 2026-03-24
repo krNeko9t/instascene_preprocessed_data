@@ -15,6 +15,7 @@
                 "--dataset","3dovs",
                 "--scene","bench",
                 "--single-object",
+                "--prompt-file","prompts/physics_perception_verbose.prompt",
                 "--model-name","qwen3-vl-30b-a3b-thinking",
                 "--api-base-url","https://yunwu.ai/v1",
                 "--image-mode","pair"

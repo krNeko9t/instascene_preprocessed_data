@@ -22,6 +22,13 @@ DEFAULT_PROMPT_TEMPLATE = (
 )
 
 
+def _load_prompt_file(path: str | Path) -> str:
+    p = Path(path).expanduser().resolve()
+    if not p.is_file():
+        raise FileNotFoundError(f"Prompt file not found: {p}")
+    return p.read_text(encoding="utf-8").strip()
+
+
 @dataclass(slots=True)
 class PipelineConfig:
     data_root: Path
@@ -39,6 +46,7 @@ class PipelineConfig:
     api_base_url: str = "https://api.openai.com/v1"
     api_key: str = ""
     model_name: str = "gpt-4.1-mini"
+    prompt_file: str = ""
     prompt_template: str = DEFAULT_PROMPT_TEMPLATE
     max_concurrent: int = 4
     max_retries: int = 3
@@ -68,6 +76,7 @@ class PipelineConfig:
         api_base_url: str,
         api_key: str | None,
         model_name: str,
+        prompt_file: str,
         prompt_template: str | None,
         max_concurrent: int,
         max_retries: int,
@@ -94,7 +103,8 @@ class PipelineConfig:
             api_base_url=api_base_url,
             api_key=api_key or os.getenv("VLM_API_KEY", ""),
             model_name=model_name,
-            prompt_template=prompt_template or DEFAULT_PROMPT_TEMPLATE,
+            prompt_file=prompt_file,
+            prompt_template=_load_prompt_file(prompt_file) if prompt_file else (prompt_template or DEFAULT_PROMPT_TEMPLATE),
             max_concurrent=max_concurrent,
             max_retries=max_retries,
             retry_backoff_seconds=retry_backoff_seconds,

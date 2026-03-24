@@ -1,0 +1,108 @@
+You are an expert in physics-based simulation and visual perception. You are given images of an object instance highlighted in a 3D indoor scene from {n_views} viewpoint(s). The highlighted object is marked with a semi-transparent green overlay, a red contour, and a blue bounding box in the scene-level images; a white-background crop is also provided.
+
+Your task: extract an instance-level physical simulation intermediate representation for the highlighted object based on what is **visually observable** and what can be **reasonably inferred from common sense**. Predict each of the following fields.
+
+---
+
+### Fields to predict
+
+**1. object_description** (string)
+A concise one-sentence English caption describing what this object looks like (e.g. "a white fabric curtain hung near the window").
+
+**2. scene_role** (enum)
+The role of this instance in a whole-scene animation simulation. Only answer "what role it plays in simulation", not what dynamics template it belongs to.
+- "static_boundary" — Acts as a static collision boundary; does not actively participate in simulation. Typical examples: wall, floor, ceiling, fixed cabinet, built-in countertop.
+- "simulatable" — Can theoretically participate in animation-level simulation as an independent object. Typical examples: chair, curtain, pillow, cup, book, rope, towel.
+- "ignore" — Should be ignored in the current simulation version. Typical examples: far background, tiny fragment, unreliable clutter.
+- "unknown" — Insufficient evidence to determine.
+
+**3. geometry_form** (enum)
+The geometric / structural appearance type. Prioritize the category most useful for downstream simulation. This describes shape and structural intuition, not material.
+- "solid" — Block-like, clearly solid. Typical examples: chair, book, box, toy block. Good for rigid-body or solid templates.
+- "hollow" — Clearly hollow / container structure. Typical examples: cup, bucket, pot, empty cardboard box. Good for hollow collision or container templates.
+- "thin_sheet" — Thin sheet / surface. Typical examples: curtain, towel, bed sheet, paper, plastic bag, shirt. Good for cloth/shell agents.
+- "filamentary" — Elongated, thread-like. Typical examples: rope, cable, wire, drawstring. Good for rope/strand agents.
+- "stuffed" — Filled soft object, puffy appearance. Typical examples: pillow, cushion, stuffed toy, foam pad. Good for soft/stuffed templates.
+- "uncertain" — Cannot reliably determine (e.g. severe occlusion).
+
+**4. attachment_relation** (enum)
+How this instance is connected or constrained to the environment / other objects. This field only answers "how it is attached", NOT "what supports it". Distinguish support from attachment.
+- "free" — No obvious fixation; just placed or in contact. Typical examples: cup on table, book on shelf, chair on floor.
+- "partially_attached" — Partially connected; the rest can move. Typical examples: curtain attached at top rod, cloth partially trapped under an object.
+- "pinned_or_fixed" — Basically fixed; should not move freely. Typical examples: wall painting, fixed mirror, built-in panel.
+- "hinged_like" — Has a rotational axis / hinge-like connection. Typical examples: door, cabinet door, flip cover.
+- "embedded_or_wrapped" — Embedded, threaded through, wound around, or wrapped. Typical examples: wire passing through hole, rope wrapped around pole.
+- "uncertain" — Cannot reliably determine.
+
+**5. appearance_material_topk** (array of 1–3 objects)
+Top-k material prototypes based on visual evidence and interaction common sense. NOT a composition decomposition or real mass ratio. Each item: {"prototype": "<name>", "score": <float 0–1>}. Score represents confidence / match degree.
+Available prototypes:
+- "wood_like" — Looks like wood / lumber; usually stiff, medium-to-heavy. Examples: wood chair, wood table, wood shelf.
+- "metal_like" — Looks metallic; usually stiff and heavy. Examples: metal frame, steel cabinet, aluminum lamp.
+- "brittle_mineral_like" — Looks like glass / ceramic / stone / brick; brittle mineral class. Examples: glass vase, ceramic mug, marble countertop, brick wall.
+- "rigid_plastic_like" — Hard plastic. Examples: plastic chair, storage box, remote shell.
+- "flexible_plastic_like" — Flexible / pliable plastic. Examples: plastic bag, soft folder, flexible sheet.
+- "rubber_like" — Clearly elastic / rubbery feel. Examples: rubber mat, eraser, elastic band.
+- "fabric_like" — Obviously fabric / cloth-like. Examples: curtain, towel, blanket, shirt.
+- "paper_fiber_like" — Paper / cardboard / fiber sheet feel. Examples: paper sheet, cardboard box, paper bag.
+- "foam_like" — Sponge, foam, expanded material feel. Examples: foam pad, sponge, packing foam.
+- "leather_like" — Leather / faux-leather feel. Examples: leather sofa, wallet, seat cover.
+- "organic_soft_like" — Jelly, wax, soft food, soft organic feel. Examples: jelly dessert, wax block, soft fruit flesh.
+- "liquid_like" — Liquid feel. Examples: water, juice, soap liquid.
+- "granular_like" — Granular collection feel. Examples: sand, rice, beans, cat litter.
+- "unknown" — Cannot determine.
+
+**6. physical_priors** (object with 3 sub-fields)
+Each sub-field has "value" (enum) and "confidence" (float 0–1).
+
+  **6a. heaviness_bin** — Perceived weight level from visual evidence and common sense. Not a real mass measurement.
+  - "very_light" — Obviously very light. Examples: paper sheet, empty plastic bag.
+  - "light" — Somewhat light. Examples: towel, small plastic item, thin cushion.
+  - "medium" — Medium weight. Examples: book, ceramic mug, small box.
+  - "heavy" — Somewhat heavy. Examples: wood chair, metal stool, large vase.
+  - "very_heavy" — Obviously very heavy. Examples: stone slab, full cabinet, large metal object.
+  - "unknown" — Cannot determine.
+
+  **6b. stiffness_bin** — Perceived stiffness / rigidity level. One of the most important physical priors.
+  - "very_soft" — Very soft, easily compressed / bent. Examples: soft pillow, foam pad, loose cloth.
+  - "soft" — Somewhat soft. Examples: towel, soft bag, rubbery sheet.
+  - "medium" — Medium stiffness. Examples: thick book cover, semi-rigid plastic folder.
+  - "stiff" — Somewhat stiff. Examples: wood board, rigid plastic box, ceramic mug.
+  - "very_stiff" — Very stiff. Examples: metal frame, stone block, glass panel.
+  - "unknown" — Cannot determine.
+
+  **6c. surface_friction_bin** — Perceived surface friction tendency when interacting with common indoor surfaces. This records the instance surface's general friction tendency, not an exact coefficient.
+  - "low" — Surface is slippery. Examples: glass, polished metal, smooth plastic.
+  - "medium" — Medium friction. Examples: wood, paperboard, ordinary plastic.
+  - "high" — Surface is rough or grippy. Examples: rubber mat, rough fabric, foam surface.
+  - "unknown" — Cannot determine.
+
+---
+
+### Output format
+
+Return ONLY a single valid JSON object (no markdown fences, no explanation before or after). Follow this structure exactly:
+
+{
+  "object_description": "a white fabric curtain hung near the window",
+  "scene_role": "simulatable",
+  "geometry_form": "thin_sheet",
+  "attachment_relation": "partially_attached",
+  "appearance_material_topk": [
+    {"prototype": "fabric_like", "score": 0.9},
+    {"prototype": "paper_fiber_like", "score": 0.05},
+    {"prototype": "flexible_plastic_like", "score": 0.05}
+  ],
+  "physical_priors": {
+    "heaviness_bin": {"value": "light", "confidence": 0.72},
+    "stiffness_bin": {"value": "soft", "confidence": 0.84},
+    "surface_friction_bin": {"value": "medium", "confidence": 0.58}
+  }
+}
+
+---
+
+Object ID: {object_id}
+Number of views: {n_views}
+View names: {view_names}
+Image input mode: {image_mode}

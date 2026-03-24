@@ -41,6 +41,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--api-base-url", type=str, default="https://api.openai.com/v1")
     parser.add_argument("--api-key", type=str, default="")
     parser.add_argument("--model-name", type=str, default="gpt-4.1-mini")
+    parser.add_argument(
+        "--prompt-file",
+        type=str,
+        default="",
+        help="Path to a .prompt file to use as prompt template (overrides --prompt-template)",
+    )
     parser.add_argument("--prompt-template", type=str, default=DEFAULT_PROMPT_TEMPLATE)
     parser.add_argument("--max-concurrent", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
@@ -101,7 +107,8 @@ async def main_async() -> None:
         api_base_url=args.api_base_url,
         api_key=args.api_key,
         model_name=args.model_name,
-        prompt_template=args.prompt_template,
+        prompt_file=args.prompt_file,
+        prompt_template=args.prompt_template if not args.prompt_file else None,
         max_concurrent=args.max_concurrent,
         max_retries=args.max_retries,
         retry_backoff_seconds=args.retry_backoff_seconds,
