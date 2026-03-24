@@ -35,7 +35,7 @@ How this instance is connected or constrained to the environment / other objects
 - "uncertain" — Cannot reliably determine.
 
 **5. appearance_material_topk** (array of 1–3 objects)
-Top-k material prototypes based on visual evidence and interaction common sense. NOT a composition decomposition or real mass ratio. Each item: {"prototype": "<name>", "score": <float 0–1>}. Score represents confidence / match degree.
+Top-k material prototypes based on visual evidence and interaction common sense. NOT a composition decomposition or real mass ratio. Each item: {{"prototype": "<name>", "score": <float 0–1>}}. Score represents confidence / match degree.
 Available prototypes:
 - "wood_like" — Looks like wood / lumber; usually stiff, medium-to-heavy. Examples: wood chair, wood table, wood shelf.
 - "metal_like" — Looks metallic; usually stiff and heavy. Examples: metal frame, steel cabinet, aluminum lamp.
@@ -83,22 +83,22 @@ Each sub-field has "value" (enum) and "confidence" (float 0–1).
 
 Return ONLY a single valid JSON object (no markdown fences, no explanation before or after). Follow this structure exactly:
 
-{
+{{
   "object_description": "a white fabric curtain hung near the window",
   "scene_role": "simulatable",
   "geometry_form": "thin_sheet",
   "attachment_relation": "partially_attached",
   "appearance_material_topk": [
-    {"prototype": "fabric_like", "score": 0.9},
-    {"prototype": "paper_fiber_like", "score": 0.05},
-    {"prototype": "flexible_plastic_like", "score": 0.05}
+    {{"prototype": "fabric_like", "score": 0.9}},
+    {{"prototype": "paper_fiber_like", "score": 0.05}},
+    {{"prototype": "flexible_plastic_like", "score": 0.05}}
   ],
-  "physical_priors": {
-    "heaviness_bin": {"value": "light", "confidence": 0.72},
-    "stiffness_bin": {"value": "soft", "confidence": 0.84},
-    "surface_friction_bin": {"value": "medium", "confidence": 0.58}
-  }
-}
+  "physical_priors": {{
+    "heaviness_bin": {{"value": "light", "confidence": 0.72}},
+    "stiffness_bin": {{"value": "soft", "confidence": 0.84}},
+    "surface_friction_bin": {{"value": "medium", "confidence": 0.58}}
+  }}
+}}
 
 ---
 

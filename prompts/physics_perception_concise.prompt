@@ -6,31 +6,31 @@ Extract a physical simulation intermediate representation as a JSON object with 
 2. "scene_role": one of ["static_boundary", "simulatable", "ignore", "unknown"]
 3. "geometry_form": one of ["solid", "hollow", "thin_sheet", "filamentary", "stuffed", "uncertain"]
 4. "attachment_relation": one of ["free", "partially_attached", "pinned_or_fixed", "hinged_like", "embedded_or_wrapped", "uncertain"]
-5. "appearance_material_topk": array of 1–3 items, each {"prototype": <name>, "score": <float 0–1>}
+5. "appearance_material_topk": array of 1–3 items, each {{"prototype": <name>, "score": <float 0–1>}}
    Prototypes: ["wood_like", "metal_like", "brittle_mineral_like", "rigid_plastic_like", "flexible_plastic_like", "rubber_like", "fabric_like", "paper_fiber_like", "foam_like", "leather_like", "organic_soft_like", "liquid_like", "granular_like", "unknown"]
-6. "physical_priors": object with 3 sub-fields, each {"value": <enum>, "confidence": <float 0–1>}
+6. "physical_priors": object with 3 sub-fields, each {{"value": <enum>, "confidence": <float 0–1>}}
    - "heaviness_bin": one of ["very_light", "light", "medium", "heavy", "very_heavy", "unknown"]
    - "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
    - "surface_friction_bin": one of ["low", "medium", "high", "unknown"]
 
 Example output:
 
-{
+{{
   "object_description": "a white fabric curtain hung near the window",
   "scene_role": "simulatable",
   "geometry_form": "thin_sheet",
   "attachment_relation": "partially_attached",
   "appearance_material_topk": [
-    {"prototype": "fabric_like", "score": 0.9},
-    {"prototype": "paper_fiber_like", "score": 0.05},
-    {"prototype": "flexible_plastic_like", "score": 0.05}
+    {{"prototype": "fabric_like", "score": 0.9}},
+    {{"prototype": "paper_fiber_like", "score": 0.05}},
+    {{"prototype": "flexible_plastic_like", "score": 0.05}}
   ],
-  "physical_priors": {
-    "heaviness_bin": {"value": "light", "confidence": 0.72},
-    "stiffness_bin": {"value": "soft", "confidence": 0.84},
-    "surface_friction_bin": {"value": "medium", "confidence": 0.58}
-  }
-}
+  "physical_priors": {{
+    "heaviness_bin": {{"value": "light", "confidence": 0.72}},
+    "stiffness_bin": {{"value": "soft", "confidence": 0.84}},
+    "surface_friction_bin": {{"value": "medium", "confidence": 0.58}}
+  }}
+}}
 
 Return ONLY valid JSON. No markdown fences, no explanation.
 
