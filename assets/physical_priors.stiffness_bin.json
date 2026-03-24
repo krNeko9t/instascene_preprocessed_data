@@ -1,0 +1,62 @@
+{
+  "field_name": "physical_priors.stiffness_bin",
+  "type": "enum_with_confidence",
+  "required": false,
+  "description": "基于视觉证据与常识估计的刚柔程度等级。表达该实例看起来是容易弯折/压缩，还是整体较硬。",
+  "annotation_rule": "这是最值得优先标注的物理先验之一。用于后续模板微调，不直接等于 solver 参数。",
+  "values": [
+    {
+      "name": "very_soft",
+      "definition": "非常软，容易压缩/弯折。",
+      "typical_examples": [
+        "soft pillow",
+        "foam pad",
+        "loose cloth"
+      ]
+    },
+    {
+      "name": "soft",
+      "definition": "偏软。",
+      "typical_examples": [
+        "towel",
+        "soft bag",
+        "rubbery sheet"
+      ]
+    },
+    {
+      "name": "medium",
+      "definition": "中等刚柔。",
+      "typical_examples": [
+        "thick book cover",
+        "semi-rigid plastic folder"
+      ]
+    },
+    {
+      "name": "stiff",
+      "definition": "偏硬。",
+      "typical_examples": [
+        "wood board",
+        "rigid plastic box",
+        "ceramic mug"
+      ]
+    },
+    {
+      "name": "very_stiff",
+      "definition": "非常硬。",
+      "typical_examples": [
+        "metal frame",
+        "stone block",
+        "glass panel"
+      ]
+    },
+    {
+      "name": "unknown",
+      "definition": "无法稳定判断。",
+      "typical_examples": []
+    }
+  ],
+  "confidence_range": [
+    0.0,
+    1.0
+  ]
+}

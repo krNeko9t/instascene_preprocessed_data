@@ -1,0 +1,28 @@
+{
+    "field_name": "scene_role",
+    "type": "enum",
+    "required": true,
+    "description": "实例在整场景动画模拟中的角色。",
+    "values": [
+      {
+        "name": "static_boundary",
+        "definition": "作为静态碰撞边界，不主动参与模拟。",
+        "examples": ["wall", "floor", "ceiling", "fixed cabinet"]
+      },
+      {
+        "name": "simulatable",
+        "definition": "理论上可以作为独立对象参与模拟。",
+        "examples": ["chair", "curtain", "pillow", "cup"]
+      },
+      {
+        "name": "ignore",
+        "definition": "当前版本忽略，不进入模拟。",
+        "examples": ["far background", "tiny fragment", "unreliable clutter"]
+      },
+      {
+        "name": "unknown",
+        "definition": "无法稳定判断。",
+        "examples": []
+      }
+    ]
+}

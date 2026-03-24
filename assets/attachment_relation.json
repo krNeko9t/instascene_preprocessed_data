@@ -1,0 +1,57 @@
+{
+  "field_name": "attachment_relation",
+  "type": "enum",
+  "required": true,
+  "description": "实例与环境/其他物体的连接或约束关系。",
+  "annotation_rule": "该字段只回答‘怎么连住’，不回答‘靠谁托住’。support 和 attachment 必须区分。",
+  "values": [
+    {
+      "name": "free",
+      "definition": "没有明显固定，只是放置或接触。",
+      "typical_examples": [
+        "cup on table",
+        "book on shelf",
+        "chair on floor"
+      ]
+    },
+    {
+      "name": "partially_attached",
+      "definition": "局部连接、其余部分可动。",
+      "typical_examples": [
+        "curtain attached at top",
+        "cloth partially trapped under object"
+      ]
+    },
+    {
+      "name": "pinned_or_fixed",
+      "definition": "基本固定，不应自由运动。",
+      "typical_examples": [
+        "wall painting",
+        "fixed mirror",
+        "built-in panel"
+      ]
+    },
+    {
+      "name": "hinged_like",
+      "definition": "存在旋转轴/门轴类连接。",
+      "typical_examples": [
+        "door",
+        "cabinet door",
+        "flip cover"
+      ]
+    },
+    {
+      "name": "embedded_or_wrapped",
+      "definition": "嵌入、穿过、缠绕、包裹。",
+      "typical_examples": [
+        "wire passing through hole",
+        "rope wrapped around pole"
+      ]
+    },
+    {
+      "name": "uncertain",
+      "definition": "无法稳定判断。",
+      "typical_examples": []
+    }
+  ]
+}

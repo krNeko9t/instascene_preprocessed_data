@@ -1,0 +1,39 @@
+{
+  "schema_version": "instance_physics_perception_v1",
+  "instance_id": "scene12_inst034",
+  "object_description": "a white curtain",
+  "scene_role": "simulatable",
+  "geometry_form": "thin_sheet",
+  "attachment_relation": "partially_attached",
+  "appearance_material_topk": [
+    {
+      "prototype": "fabric_like",
+      "score": 0.9
+    },
+    {
+      "prototype": "paper_fiber_like",
+      "score": 0.05
+    },
+    {
+      "prototype": "flexible_plastic_like",
+      "score": 0.05
+    }
+  ],
+  "physical_priors": {
+    "heaviness_bin": {
+      "value": "light",
+      "confidence": 0.72
+    },
+    "stiffness_bin": {
+      "value": "soft",
+      "confidence": 0.84
+    },
+    "surface_friction_bin": {
+      "value": "medium",
+      "confidence": 0.58
+    }
+  },
+  "overall_confidence": 0.88,
+  "needs_review": false,
+  "notes": "Example instance record."
+}

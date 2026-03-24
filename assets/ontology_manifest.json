@@ -1,0 +1,13 @@
+{
+  "schema_name": "instance_physics_perception_v1",
+  "description": "Field-level ontology manifest for animation-oriented instance physical perception.",
+  "fields": [
+    "scene_role",
+    "geometry_form",
+    "attachment_relation",
+    "appearance_material_topk",
+    "physical_priors.heaviness_bin",
+    "physical_priors.stiffness_bin",
+    "physical_priors.surface_friction_bin"
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "field_name": "appearance_material_topk",
+  "type": "topk_enum_with_score",
+  "required": true,
+  "description": "基于视觉证据与常识推断的交互相关材质原型 top-k。不是成分分解，也不是真实质量占比。",
+  "annotation_rule": "选择 1 到 3 个最能描述该实例整体交互印象的材质原型。score 表示匹配度/确信度，不强制解释为真实概率。",
+  "constraints": {
+    "min_items": 1,
+    "max_items": 3,
+    "score_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "prototype_definitions": [
+    {
+      "name": "wood_like",
+      "definition": "视觉上像木材/木板，通常偏硬、质量中等到较高。",
+      "typical_examples": [
+        "wood chair",
+        "wood table",
+        "wood shelf"
+      ]
+    },
+    {
+      "name": "metal_like",
+      "definition": "视觉上像金属，通常偏硬、偏重。",
+      "typical_examples": [
+        "metal frame",
+        "steel cabinet",
+        "aluminum lamp"
+      ]
+    },
+    {
+      "name": "brittle_mineral_like",
+      "definition": "视觉上像玻璃/陶瓷/石材/砖等脆性矿物类。",
+      "typical_examples": [
+        "glass vase",
+        "ceramic mug",
+        "marble countertop",
+        "brick wall"
+      ]
+    },
+    {
+      "name": "rigid_plastic_like",
+      "definition": "偏硬塑料。",
+      "typical_examples": [
+        "plastic chair",
+        "storage box",
+        "remote shell"
+      ]
+    },
+    {
+      "name": "flexible_plastic_like",
+      "definition": "偏柔韧塑料。",
+      "typical_examples": [
+        "plastic bag",
+        "soft folder",
+        "flexible sheet"
+      ]
+    },
+    {
+      "name": "rubber_like",
+      "definition": "有明显弹性/橡胶感。",
+      "typical_examples": [
+        "rubber mat",
+        "eraser",
+        "elastic band"
+      ]
+    },
+    {
+      "name": "fabric_like",
+      "definition": "织物/布料感明显。",
+      "typical_examples": [
+        "curtain",
+        "towel",
+        "blanket",
+        "shirt"
+      ]
+    },
+    {
+      "name": "paper_fiber_like",
+      "definition": "纸/纸板/纤维片材感。",
+      "typical_examples": [
+        "paper sheet",
+        "cardboard box",
+        "paper bag"
+      ]
+    },
+    {
+      "name": "foam_like",
+      "definition": "海绵、泡沫、发泡材质感。",
+      "typical_examples": [
+        "foam pad",
+        "sponge",
+        "packing foam"
+      ]
+    },
+    {
+      "name": "leather_like",
+      "definition": "皮革/仿皮感。",
+      "typical_examples": [
+        "leather sofa",
+        "wallet",
+        "seat cover"
+      ]
+    },
+    {
+      "name": "organic_soft_like",
+      "definition": "果冻、蜡、软食物、柔软有机物感。",
+      "typical_examples": [
+        "jelly dessert",
+        "wax block",
+        "soft fruit flesh"
+      ]
+    },
+    {
+      "name": "liquid_like",
+      "definition": "液体感。",
+      "typical_examples": [
+        "water",
+        "juice",
+        "soap liquid"
+      ]
+    },
+    {
+      "name": "granular_like",
+      "definition": "颗粒集合感。",
+      "typical_examples": [
+        "sand",
+        "rice",
+        "beans",
+        "cat litter"
+      ]
+    },
+    {
+      "name": "unknown",
+      "definition": "无法判断。",
+      "typical_examples": []
+    }
+  ],
+  "output_item_template": {
+    "prototype": "fabric_like",
+    "score": 0.9
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "field_name": "geometry_form",
+  "type": "enum",
+  "required": true,
+  "description": "实例的几何/结构外观类型。",
+  "annotation_rule": "优先选择对后续仿真代理最有帮助的一类。它描述外形与结构直觉，不直接表示材料。",
+  "values": [
+    {
+      "name": "solid",
+      "definition": "块状、实体感明显。",
+      "typical_examples": [
+        "chair",
+        "book",
+        "box",
+        "toy block"
+      ],
+      "notes": "适合后续映射为刚体或实体型模板。"
+    },
+    {
+      "name": "hollow",
+      "definition": "中空/容器结构明显。",
+      "typical_examples": [
+        "cup",
+        "bucket",
+        "pot",
+        "empty cardboard box"
+      ],
+      "notes": "适合后续映射为中空碰撞体或容器模板。"
+    },
+    {
+      "name": "thin_sheet",
+      "definition": "薄片/面状。",
+      "typical_examples": [
+        "curtain",
+        "towel",
+        "bed sheet",
+        "paper",
+        "plastic bag",
+        "shirt"
+      ],
+      "notes": "适合后续映射为 cloth/shell 类代理。"
+    },
+    {
+      "name": "filamentary",
+      "definition": "细长线状。",
+      "typical_examples": [
+        "rope",
+        "cable",
+        "wire",
+        "drawstring"
+      ],
+      "notes": "适合后续映射为 rope/strand 类代理。"
+    },
+    {
+      "name": "stuffed",
+      "definition": "填充软物，外形松软鼓胀。",
+      "typical_examples": [
+        "pillow",
+        "cushion",
+        "stuffed toy",
+        "foam pad"
+      ],
+      "notes": "适合后续映射为 soft/stuffed 类模板。"
+    },
+    {
+      "name": "uncertain",
+      "definition": "无法稳定判断。",
+      "typical_examples": [],
+      "notes": "用于遮挡严重或几何证据不足的实例。"
+    }
+  ]
+}

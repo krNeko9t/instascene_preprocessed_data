@@ -1,0 +1,62 @@
+{
+  "field_name": "physical_priors.heaviness_bin",
+  "type": "enum_with_confidence",
+  "required": false,
+  "description": "基于视觉证据与常识估计的质量感等级。优先表达‘看起来轻还是重’，不等于真实质量测量。",
+  "annotation_rule": "当实例 role 为 simulatable 时优先标注。若证据不足可省略或标 unknown。",
+  "values": [
+    {
+      "name": "very_light",
+      "definition": "明显很轻。",
+      "typical_examples": [
+        "paper sheet",
+        "empty plastic bag"
+      ]
+    },
+    {
+      "name": "light",
+      "definition": "偏轻。",
+      "typical_examples": [
+        "towel",
+        "small plastic item",
+        "thin cushion"
+      ]
+    },
+    {
+      "name": "medium",
+      "definition": "中等质量感。",
+      "typical_examples": [
+        "book",
+        "ceramic mug",
+        "small box"
+      ]
+    },
+    {
+      "name": "heavy",
+      "definition": "偏重。",
+      "typical_examples": [
+        "wood chair",
+        "metal stool",
+        "large vase"
+      ]
+    },
+    {
+      "name": "very_heavy",
+      "definition": "明显很重。",
+      "typical_examples": [
+        "stone slab",
+        "full cabinet",
+        "large metal object"
+      ]
+    },
+    {
+      "name": "unknown",
+      "definition": "无法稳定判断。",
+      "typical_examples": []
+    }
+  ],
+  "confidence_range": [
+    0.0,
+    1.0
+  ]
+}

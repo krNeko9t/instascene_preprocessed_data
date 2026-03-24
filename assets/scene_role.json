@@ -1,0 +1,51 @@
+{
+  "field_name": "scene_role",
+  "type": "enum",
+  "required": true,
+  "description": "实例在整场景动画模拟中的角色。",
+  "annotation_rule": "先判断该实例是否应进入模拟系统。该字段只回答“它在模拟里扮演什么角色”，不回答它属于哪类动力学模板。",
+  "values": [
+    {
+      "name": "static_boundary",
+      "definition": "作为静态碰撞边界存在，不主动参与模拟。",
+      "typical_examples": [
+        "wall",
+        "floor",
+        "ceiling",
+        "fixed cabinet",
+        "built-in countertop"
+      ],
+      "notes": "用于建筑结构或明显固定的大型物体。"
+    },
+    {
+      "name": "simulatable",
+      "definition": "理论上可以作为独立对象参与动画级模拟。",
+      "typical_examples": [
+        "chair",
+        "curtain",
+        "pillow",
+        "cup",
+        "book",
+        "rope",
+        "towel"
+      ],
+      "notes": "仅表示可进入模拟管线，不直接决定 solver。"
+    },
+    {
+      "name": "ignore",
+      "definition": "当前版本忽略，不进入模拟。",
+      "typical_examples": [
+        "far background",
+        "tiny fragment",
+        "unreliable clutter"
+      ],
+      "notes": "适用于远景、碎片、低质量实例。"
+    },
+    {
+      "name": "unknown",
+      "definition": "证据不足，无法稳定判断。",
+      "typical_examples": [],
+      "notes": "应降低 confidence，并建议人工复核。"
+    }
+  ]
+}

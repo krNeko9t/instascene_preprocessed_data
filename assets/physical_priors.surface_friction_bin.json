@@ -1,0 +1,45 @@
+{
+  "field_name": "physical_priors.surface_friction_bin",
+  "type": "enum_with_confidence",
+  "required": false,
+  "description": "基于视觉证据与常识估计的表面摩擦感等级。它表示与常见室内接触面交互时倾向于低/中/高摩擦，不是严格物理摩擦系数。",
+  "annotation_rule": "摩擦是接触对属性，此处仅记录实例表面的一般摩擦倾向。",
+  "values": [
+    {
+      "name": "low",
+      "definition": "表面偏滑。",
+      "typical_examples": [
+        "glass",
+        "polished metal",
+        "smooth plastic"
+      ]
+    },
+    {
+      "name": "medium",
+      "definition": "中等摩擦感。",
+      "typical_examples": [
+        "wood",
+        "paperboard",
+        "ordinary plastic"
+      ]
+    },
+    {
+      "name": "high",
+      "definition": "表面较涩或较抓。",
+      "typical_examples": [
+        "rubber mat",
+        "rough fabric",
+        "foam surface"
+      ]
+    },
+    {
+      "name": "unknown",
+      "definition": "无法稳定判断。",
+      "typical_examples": []
+    }
+  ],
+  "confidence_range": [
+    0.0,
+    1.0
+  ]
+}
