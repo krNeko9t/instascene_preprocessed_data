@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 ImageMode = Literal["crop_only", "overlay_only", "pair", "per_view"]
-OverlayStyle = Literal["contour", "bbox", "semitransparent", "all"]
+OverlayStyle = str
 IdMapSource = Literal["npy", "png"]
 
 DEFAULT_PROMPT_TEMPLATE = (

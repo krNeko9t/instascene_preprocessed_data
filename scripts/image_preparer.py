@@ -12,6 +12,21 @@ from config import PipelineConfig
 from view_selector import ViewInfo
 
 
+def _normalize_overlay_styles(style: str) -> set[str]:
+    allowed = {"contour", "bbox", "semitransparent", "all"}
+    tokens = [token.strip() for token in style.split(",") if token.strip()]
+    if not tokens:
+        return {"bbox"}
+    invalid = sorted({token for token in tokens if token not in allowed})
+    if invalid:
+        raise ValueError(
+            f"Invalid overlay style(s): {', '.join(invalid)}; allowed: contour,bbox,semitransparent,all"
+        )
+    if "all" in tokens:
+        return {"contour", "bbox", "semitransparent"}
+    return set(tokens)
+
+
 @dataclass(slots=True)
 class PreparedImage:
     view_name: str
@@ -74,18 +89,19 @@ def _make_crop(image_rgb: np.ndarray, mask: np.ndarray, bbox_xyxy: tuple[int, in
 def _draw_overlay(image_rgb: np.ndarray, mask: np.ndarray, bbox_xyxy: tuple[int, int, int, int], style: str) -> np.ndarray:
     out = image_rgb.copy()
     x1, y1, x2, y2 = bbox_xyxy
+    styles = _normalize_overlay_styles(style)
 
-    if style in {"semitransparent", "all"}:
+    if "semitransparent" in styles:
         color = np.array([40, 220, 70], dtype=np.uint8)
         alpha = 0.35
         out[mask] = (out[mask] * (1 - alpha) + color * alpha).astype(np.uint8)
 
     mask_u8 = (mask.astype(np.uint8) * 255).copy()
-    if style in {"contour", "all"}:
+    if "contour" in styles:
         contours, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cv2.drawContours(out, contours, -1, (255, 50, 50), 2)
 
-    if style in {"bbox", "all"}:
+    if "bbox" in styles:
         cv2.rectangle(out, (x1, y1), (x2, y2), (50, 120, 255), 2)
     return out
 

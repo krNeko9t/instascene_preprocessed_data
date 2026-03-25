@@ -14,10 +14,13 @@
                 "--data-root","/home/liaowanjun/Datas/instascene_preprocessed_data",
                 "--dataset","3dovs",
                 "--scene","bench",
-                "--prompt-file","prompts/physics_perception_verbose.prompt",
-                "--max-views","4",
-                "--image-mode","pair",
-                "--model-name","gpt-5.4-mini-2026-03-17",
+                "--prompt-file","prompts/physics_perception_verbose_v2.prompt",
+                "--max-views","1",
+                "--image-mode","crop_only",
+                "--overlay-style","bbox,contour",
+                // "--model-name","gpt-5.4-mini-2026-03-17",
+                "--model-name","qwen3-vl-30b-a3b-thinking",
+                // "--model-name","gpt-5.4",
                 "--api-base-url","https://yunwu.ai/v1"
             ],
             "env": {

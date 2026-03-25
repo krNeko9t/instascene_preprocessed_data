@@ -6,6 +6,19 @@ from datetime import datetime
 from pathlib import Path
 
 
+def _parse_overlay_style_arg(value: str) -> str:
+    allowed = {"contour", "bbox", "semitransparent", "all"}
+    tokens = [token.strip() for token in value.split(",") if token.strip()]
+    if not tokens:
+        raise argparse.ArgumentTypeError("overlay-style cannot be empty")
+    invalid = sorted({token for token in tokens if token not in allowed})
+    if invalid:
+        raise argparse.ArgumentTypeError(
+            f"Invalid overlay style(s): {', '.join(invalid)}; allowed: contour,bbox,semitransparent,all"
+        )
+    return ",".join(tokens)
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     from config import DEFAULT_PROMPT_TEMPLATE
 
@@ -33,9 +46,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--overlay-style",
-        type=str,
+        type=_parse_overlay_style_arg,
         default="bbox",
-        choices=["contour", "bbox", "semitransparent", "all"],
+        help="Overlay style(s), supports comma-separated values, e.g. bbox,contour",
     )
     parser.add_argument("--crop-padding-ratio", type=float, default=0.15)
     parser.add_argument("--api-base-url", type=str, default="https://api.openai.com/v1")
