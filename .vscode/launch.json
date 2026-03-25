@@ -14,14 +14,34 @@
                 "--data-root","/home/liaowanjun/Datas/instascene_preprocessed_data",
                 "--dataset","3dovs",
                 "--scene","bench",
-                "--prompt-file","prompts/physics_perception_verbose_v2.prompt",
+                "--prompt-file","prompts/physics_perception_concise_v2.prompt",
                 "--max-views","1",
-                "--image-mode","crop_only",
+                "--image-mode","pair",
                 "--overlay-style","bbox,contour",
                 // "--model-name","gpt-5.4-mini-2026-03-17",
                 "--model-name","qwen3-vl-30b-a3b-thinking",
                 // "--model-name","gpt-5.4",
                 "--api-base-url","https://yunwu.ai/v1"
+            ],
+            "env": {
+                "VLM_API_KEY": "sk-tEU26kKSxG0qpt5iIA85n1a8mDWNt0Pn59yA4BzPQhhP9DPz"
+            }
+        },
+        {
+            "name": "audit",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/ask_vlm_image_audit.py",
+            "console": "integratedTerminal",
+            "args": [
+                // "--model-name","gpt-5.4-mini-2026-03-17",
+                "--model-name","qwen3-vl-30b-a3b-thinking",
+                // "--model-name","gpt-5.4",
+                "--api-base-url","https://yunwu.ai/v1",
+                "--images",
+                "outputs/run_20260318_133931/3dovs/bench/debug_inputs/object_001/batch_00_00_19_overlay.jpg",
+                "outputs/run_20260318_133931/3dovs/bench/debug_inputs/object_001/batch_00_01_19_crop.jpg",
+                "outputs/run_20260318_133931/3dovs/bench/debug_inputs/object_001/batch_00_02_20_overlay.jpg"
             ],
             "env": {
                 "VLM_API_KEY": "sk-tEU26kKSxG0qpt5iIA85n1a8mDWNt0Pn59yA4BzPQhhP9DPz"

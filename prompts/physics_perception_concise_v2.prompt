@@ -13,9 +13,6 @@ Extract a physical simulation intermediate representation as a JSON object with 
    - "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
    - "surface_friction_bin": one of ["low", "medium", "high", "unknown"]
 
+Process: (1) examine each view; (2) merge evidence across views; (3) output the JSON. Every field must reflect the combined evidence from all views, not one image only.
 Return ONLY valid JSON. No markdown fences, no explanation.
 
-Object ID: {object_id}
-Number of views: {n_views}
-View names: {view_names}
-Image input mode: {image_mode}
