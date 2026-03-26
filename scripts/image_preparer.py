@@ -106,6 +106,24 @@ def _draw_overlay(image_rgb: np.ndarray, mask: np.ndarray, bbox_xyxy: tuple[int,
     return out
 
 
+def _pad_vertical_center(image_rgb: np.ndarray, target_h: int, fill_value: int) -> np.ndarray:
+    h, w = image_rgb.shape[:2]
+    if h == target_h:
+        return image_rgb
+    total = target_h - h
+    top = total // 2
+    bottom = total - top
+    pad_shape = ((top, bottom), (0, 0), (0, 0))
+    return np.pad(image_rgb, pad_shape, mode="constant", constant_values=fill_value)
+
+
+def _hstack_overlay_crop(overlay_rgb: np.ndarray, crop_rgb: np.ndarray, fill_value: int = 255) -> np.ndarray:
+    h = max(overlay_rgb.shape[0], crop_rgb.shape[0])
+    left = _pad_vertical_center(overlay_rgb, h, fill_value)
+    right = _pad_vertical_center(crop_rgb, h, fill_value)
+    return np.hstack([left, right])
+
+
 def prepare_image_batches(views: List[ViewInfo], config: PipelineConfig) -> List[ImageBatch]:
     if not views:
         return []
@@ -159,6 +177,22 @@ def prepare_image_batches(views: List[ViewInfo], config: PipelineConfig) -> List
                 )
             )
         return [ImageBatch(images=images, mode="pair")]
+
+    if config.image_mode == "combined":
+        images = []
+        for view in views:
+            image_rgb = _read_image_rgb(view.image_path)
+            overlay = _draw_overlay(image_rgb, view.mask, view.bbox_xyxy, config.overlay_style)
+            crop = _make_crop(image_rgb, view.mask, view.bbox_xyxy, config.crop_padding_ratio)
+            merged = _hstack_overlay_crop(overlay, crop)
+            images.append(
+                PreparedImage(
+                    view_name=view.view_name,
+                    variant="overlay_crop",
+                    image_base64=_encode_rgb_to_jpeg_base64(merged),
+                )
+            )
+        return [ImageBatch(images=images, mode="combined")]
 
     if config.image_mode == "per_view":
         batches: List[ImageBatch] = []

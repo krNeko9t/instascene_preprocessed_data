@@ -1,4 +1,4 @@
-You are given images of an object instance highlighted in a scene from {n_views} viewpoint(s). In each viewpoints the object is marked with a blue bounding box; a white-background crop is also provided.
+You are given one composite image per viewpoint for {n_views} viewpoint(s): on the left, the full scene with the target object marked by a blue bounding box; on the right, a white-background crop of that object.
 
 Extract a physical simulation intermediate representation as a JSON object with these fields:
 

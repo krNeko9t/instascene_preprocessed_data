@@ -42,7 +42,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--image-mode",
         type=str,
         default="pair",
-        choices=["crop_only", "overlay_only", "pair", "per_view"],
+        choices=["crop_only", "overlay_only", "pair", "combined", "per_view"],
+        help="combined: overlay|crop left-right in one image per view, vertical pad to equal height",
     )
     parser.add_argument(
         "--overlay-style",

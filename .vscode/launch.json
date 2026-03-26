@@ -16,7 +16,7 @@
                 "--scene","bench",
                 "--prompt-file","prompts/physics_perception_concise_v2.prompt",
                 "--max-views","1",
-                "--image-mode","pair",
+                "--image-mode","combined",
                 "--overlay-style","bbox,contour",
                 // "--model-name","gpt-5.4-mini-2026-03-17",
                 "--model-name","qwen3-vl-30b-a3b-thinking",

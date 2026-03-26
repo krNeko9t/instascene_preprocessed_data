@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-ImageMode = Literal["crop_only", "overlay_only", "pair", "per_view"]
+ImageMode = Literal["crop_only", "overlay_only", "pair", "combined", "per_view"]
 OverlayStyle = str
 IdMapSource = Literal["npy", "png"]
 
