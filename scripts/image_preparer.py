@@ -337,9 +337,14 @@ def prepare_image_batches(views: List[ViewInfo], config: PipelineConfig) -> List
                 spec=spec,
             )
             panel_title = title if isinstance(title, str) else _default_title(variant.strip())
-            if titles_enabled:
-                panel_rgb = _add_panel_title(panel_rgb, panel_title, title_spec)
-            rendered_panels.append({"variant": variant.strip(), "title": title, "image_rgb": panel_rgb})
+            rendered_panels.append({"variant": variant.strip(), "title": panel_title, "image_rgb": panel_rgb})
+
+        if titles_enabled:
+            max_h = max(rp["image_rgb"].shape[0] for rp in rendered_panels)
+            max_w = max(rp["image_rgb"].shape[1] for rp in rendered_panels)
+            for rp in rendered_panels:
+                padded = _pad_to_size_center(rp["image_rgb"], max_h, max_w, fill_value)
+                rp["image_rgb"] = _add_panel_title(padded, rp["title"], title_spec)
 
         composed_rgb = _compose_panels([rp["image_rgb"] for rp in rendered_panels], layout_spec, fill_value)
         panel_meta = [
