@@ -39,11 +39,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-bbox-area-ratio", type=float, default=0.002)
     parser.add_argument("--max-views", type=int, default=8)
     parser.add_argument(
-        "--image-mode",
+        "--view-compose-spec",
         type=str,
-        default="pair",
-        choices=["crop_only", "overlay_only", "pair", "combined", "per_view"],
-        help="combined: overlay|crop left-right in one image per view, vertical pad to equal height",
+        default="",
+        help="Inline JSON spec to compose panels into ONE image per view (overrides --view-compose-spec-file).",
+    )
+    parser.add_argument(
+        "--view-compose-spec-file",
+        type=str,
+        default="",
+        help="Path to JSON file for compose spec (used when --view-compose-spec is empty).",
     )
     parser.add_argument(
         "--overlay-style",
@@ -115,9 +120,10 @@ async def main_async() -> None:
         min_pixel_ratio=args.min_pixel_ratio,
         min_bbox_area_ratio=args.min_bbox_area_ratio,
         max_views=args.max_views,
-        image_mode=args.image_mode,
         overlay_style=args.overlay_style,
         crop_padding_ratio=args.crop_padding_ratio,
+        view_compose_spec=args.view_compose_spec,
+        view_compose_spec_file=args.view_compose_spec_file,
         api_base_url=args.api_base_url,
         api_key=args.api_key,
         model_name=args.model_name,

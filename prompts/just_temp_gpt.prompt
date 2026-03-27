@@ -1,0 +1,25 @@
+You are labeling the TARGET REGION for simulation assetization.
+
+For each view, you are given:
+1) the original image,
+2) the exact binary mask of the target region,
+3) the original image with only the target region kept unchanged and all other regions dimmed/desaturated,
+
+Important rules:
+- Classify the TARGET REGION itself, not the most salient object in the image.
+- The target may be a foreground object or a large background surface.
+- Holes inside the target mask may be caused by occluders; do not classify the occluding objects.
+- Use the multi-view evidence jointly.
+
+Choose exactly one label:
+- static: Acts as a static collision boundary; does not actively participate in simulation. Typical examples: wall, floor, ceiling, fixed cabinet, built-in countertop.
+- dynamic_rigid: Suitable to participate in animation-level simulation as an independent object, and act like rigid object.
+- dynamic_soft: Suitable to participate in animation-level simulation as an independent object, and act like deformable object.
+- out_of_range: Object that is hard to recognise or don't belong to class above. Typical examples: far background, tiny fragment, unreliable clutter, liquid.
+
+Return JSON:
+{
+  "label": "...",
+  "confidence": 0.0-1.0,
+  "reason": "short"
+}

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-ImageMode = Literal["crop_only", "overlay_only", "pair", "combined", "per_view"]
 OverlayStyle = str
 IdMapSource = Literal["npy", "png"]
 
@@ -21,12 +21,38 @@ DEFAULT_PROMPT_TEMPLATE = (
     "Input mode: {image_mode}"
 )
 
+DEFAULT_VIEW_COMPOSE_SPEC = json.dumps(
+    {
+        "layout": {"type": "horizontal"},
+        "titles": {"enabled": True},
+        "panels": [
+            {"variant": "origin", "title": "origin"},
+            {"variant": "mask_bw", "title": "mask"},
+            {"variant": "highlight_outside_dark", "title": "highlight"},
+        ],
+        "align": {"mode": "pad", "fill_value": 255},
+        "mask_bw": {"foreground": 255, "background": 0, "invert": False},
+        "highlight_outside_dark": {"outside_factor": 0.35},
+    },
+    ensure_ascii=False,
+)
+
 
 def _load_prompt_file(path: str | Path) -> str:
     p = Path(path).expanduser().resolve()
     if not p.is_file():
         raise FileNotFoundError(f"Prompt file not found: {p}")
     return p.read_text(encoding="utf-8").strip()
+
+
+def _load_view_compose_spec_file(path: str | Path) -> str:
+    p = Path(path).expanduser().resolve()
+    if not p.is_file():
+        raise FileNotFoundError(f"View compose spec file not found: {p}")
+    raw = p.read_text(encoding="utf-8").strip()
+    if not raw:
+        raise ValueError(f"View compose spec file is empty: {p}")
+    return raw
 
 
 @dataclass(slots=True)
@@ -40,9 +66,10 @@ class PipelineConfig:
     min_pixel_ratio: float = 0.15
     min_bbox_area_ratio: float = 0.002
     max_views: int = 8
-    image_mode: ImageMode = "pair"
     overlay_style: OverlayStyle = "all"
     crop_padding_ratio: float = 0.15
+    view_compose_spec: str = DEFAULT_VIEW_COMPOSE_SPEC
+    view_compose_spec_file: str = ""
     api_base_url: str = "https://api.openai.com/v1"
     api_key: str = ""
     model_name: str = "gpt-4.1-mini"
@@ -70,9 +97,10 @@ class PipelineConfig:
         min_pixel_ratio: float,
         min_bbox_area_ratio: float,
         max_views: int,
-        image_mode: ImageMode,
         overlay_style: OverlayStyle,
         crop_padding_ratio: float,
+        view_compose_spec: str | None,
+        view_compose_spec_file: str | None,
         api_base_url: str,
         api_key: str | None,
         model_name: str,
@@ -87,6 +115,15 @@ class PipelineConfig:
         single_object_only: bool,
         save_debug_inputs: bool,
     ) -> "PipelineConfig":
+        inline_spec = (view_compose_spec or "").strip()
+        spec_file = (view_compose_spec_file or "").strip()
+        if inline_spec:
+            resolved_spec = inline_spec
+        elif spec_file:
+            resolved_spec = _load_view_compose_spec_file(spec_file)
+        else:
+            resolved_spec = DEFAULT_VIEW_COMPOSE_SPEC
+
         return cls(
             data_root=Path(data_root).expanduser().resolve(),
             dataset=dataset,
@@ -97,9 +134,10 @@ class PipelineConfig:
             min_pixel_ratio=min_pixel_ratio,
             min_bbox_area_ratio=min_bbox_area_ratio,
             max_views=max_views,
-            image_mode=image_mode,
             overlay_style=overlay_style,
             crop_padding_ratio=crop_padding_ratio,
+            view_compose_spec=resolved_spec,
+            view_compose_spec_file=spec_file,
             api_base_url=api_base_url,
             api_key=api_key or os.getenv("VLM_API_KEY", ""),
             model_name=model_name,

@@ -4,7 +4,7 @@ import asyncio
 import base64
 import json
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -123,9 +123,15 @@ def _dump_debug_batch(
         "object_id": object_id,
         "batch_index": batch_index,
         "mode": batch.mode,
+        "batch_meta": batch.meta or {},
         "num_images": len(batch.images),
         "images": [
-            {"index": i, "view_name": img.view_name, "variant": img.variant}
+            {
+                "index": i,
+                "view_name": img.view_name,
+                "variant": img.variant,
+                "meta": img.meta or {},
+            }
             for i, img in enumerate(batch.images)
         ],
     }
@@ -182,34 +188,8 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
         if not batches:
             return
 
-        if config.image_mode == "per_view":
-            per_view_outputs = []
-            for batch_index, batch in enumerate(batches):
-                prompt = _build_prompt(
-                    config,
-                    dataset=dataset,
-                    scene=scene,
-                    object_id=obj_id,
-                    batch=batch,
-                )
-                if config.save_debug_inputs:
-                    _dump_debug_batch(
-                        debug_dir,
-                        object_id=obj_id,
-                        batch_index=batch_index,
-                        batch=batch,
-                        prompt=prompt,
-                    )
-                text = await client.infer(prompt, batch.images)
-                per_view_outputs.append(
-                    {
-                        "view_names": [img.view_name for img in batch.images],
-                        "response": text,
-                    }
-                )
-            response_payload: Any = per_view_outputs
-        else:
-            batch = batches[0]
+        batch_outputs: list[dict[str, Any]] = []
+        for batch_index, batch in enumerate(batches):
             prompt = _build_prompt(
                 config,
                 dataset=dataset,
@@ -225,7 +205,19 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
                     batch=batch,
                     prompt=prompt,
                 )
-            response_payload = await client.infer(prompt, batch.images)
+            text = await client.infer(prompt, batch.images)
+            batch_outputs.append(
+                {
+                    "batch_index": batch_index,
+                    "mode": batch.mode,
+                    "view_names": [img.view_name for img in batch.images],
+                    "response": text,
+                }
+            )
+        if len(batch_outputs) == 1:
+            response_payload: Any = batch_outputs[0]["response"]
+        else:
+            response_payload = batch_outputs
 
         parsed = None
         if isinstance(response_payload, str):
@@ -235,7 +227,7 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
             id=obj_id,
             response=response_payload,
             n_views=len(views),
-            mode=config.image_mode,
+            mode=batches[0].mode,
             parsed_json=parsed,
         )
         async with lock:

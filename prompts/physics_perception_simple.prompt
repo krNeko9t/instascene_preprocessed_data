@@ -1,0 +1,21 @@
+You are given one composite image per viewpoint for {n_views} viewpoint(s), each view is one image combined with: 1. fullview image, 2. the original image with non-target regions dimmed/desaturated, 3. the exact binary mask of the target region.
+
+Extract a physical simulation intermediate representation as a JSON object with these fields:
+
+1. "object_description": string — one-sentence caption of the object.
+2. "behavior_template": one of:
+   - static: Acts as a static collision boundary; does not actively participate in simulation. Typical examples: wall, floor, ceiling, fixed cabinet, built-in countertop.
+   - dynamic_rigid: Suitable to participate in animation-level simulation as an independent object, and act like rigid object.
+   - dynamic_soft: Suitable to participate in animation-level simulation as an independent object, and act like deformable object.
+   - out_of_range: Object that is hard to recognise or don't belong to class above. Typical examples: far background, tiny fragment, unreliable clutter, liquid.
+3. "geometry_form": one of ["solid", "hollow", "thin_sheet", "filamentary", "stuffed", "uncertain"]
+4. "appearance_materials": array of 1–3 items, each {{"prototype": <name>, "score": <float 0–1>}}
+   Available prototypes: ["wood", "metal", "brittle_mineral", "rigid_plastic", "flexible_plastic", "rubber", "fabric", "paper_fiber", "foam", "leather", "organic_soft", "liquid", "granular", "unknown"]
+5. "physical_priors": object with 3 sub-fields, each {{"value": <enum>, "confidence": <float 0–1>}}
+   - "heaviness_bin": one of ["very_light", "light", "medium", "heavy", "very_heavy", "unknown"]
+   - "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
+   - "surface_friction_bin": one of ["low", "medium", "high", "unknown"]
+
+Process: (1) examine each view; (2) merge evidence across views; (3) output the JSON. Every field must reflect the combined evidence from all views, not one image only.
+Return ONLY valid JSON. No markdown fences, no explanation.
+
