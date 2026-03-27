@@ -136,7 +136,7 @@ def load_scene(
         unique_ids = np.unique(mask)
         for obj_id in unique_ids:
             int_id = int(obj_id)
-            if int_id <= 0:
+            if int_id < 0:
                 continue
             object_id_set.add(int_id)
             object_to_views.setdefault(int_id, []).append(record)

@@ -1,12 +1,13 @@
 {
-    "layout": {"type": "horizontal"},
+    "layout": {"type": "grid", "cols": 2},
     "titles": {"enabled": true},
     "panels": [
       {"variant": "origin", "title": "origin"},
       {"variant": "highlight_outside_dark", "title": "highlight"},
+      {"variant": "crop", "title": "crop"},
       {"variant": "mask_bw", "title": "mask"}
     ],
     "align": {"mode": "pad", "fill_value": 255},
     "mask_bw": {"foreground": 255, "background": 0, "invert": false},
-    "highlight_outside_dark": {"outside_factor": 0.35}
+    "highlight_outside_dark": {"outside_factor": 0.15}
   }

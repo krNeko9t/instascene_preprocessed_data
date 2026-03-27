@@ -1,21 +1,31 @@
-You are given one composite image per viewpoint for {n_views} viewpoint(s), each view is one image combined with: 1. fullview image, 2. the original image with non-target regions dimmed/desaturated, 3. the exact binary mask of the target region.
+You are given {n_views} composite image(s), one per viewpoint. Each composite contains 4 panels in a 2×2 grid:
+  Top-left "origin": the full original scene.
+  Top-right "highlight": the original with non-target regions heavily dimmed — only the target region keeps full brightness.
+  Bottom-left "crop": a zoomed-in crop around the target region, non-target pixels replaced by white.
+  Bottom-right "mask": a binary mask where WHITE = target region, BLACK = everything else.
 
-Extract a physical simulation intermediate representation as a JSON object with these fields:
+CRITICAL — how to identify the target:
+- The WHITE area in the "mask" panel IS the target. Describe exactly what that white region covers.
+- The target may be a foreground object OR a large background surface (wall, floor, table-top, ceiling, etc.).
+- Do NOT default to the most visually salient object. Focus strictly on what the white mask covers.
+- Holes inside the white mask are caused by occluding objects in front of the target; ignore the occluders.
+- For small targets, rely on the "crop" panel for a closer view.
 
-1. "object_description": string — one-sentence caption of the object.
+Extract a physical simulation intermediate representation as a JSON object:
+
+1. "object_description": string — one-sentence caption of the target region.
 2. "behavior_template": one of:
-   - static: Acts as a static collision boundary; does not actively participate in simulation. Typical examples: wall, floor, ceiling, fixed cabinet, built-in countertop.
-   - dynamic_rigid: Suitable to participate in animation-level simulation as an independent object, and act like rigid object.
-   - dynamic_soft: Suitable to participate in animation-level simulation as an independent object, and act like deformable object.
-   - out_of_range: Object that is hard to recognise or don't belong to class above. Typical examples: far background, tiny fragment, unreliable clutter, liquid.
+   - static: Static collision boundary; does not move. Examples: wall, floor, ceiling, fixed cabinet, countertop.
+   - dynamic_rigid: Independent rigid object suitable for simulation.
+   - dynamic_soft: Independent deformable object suitable for simulation.
+   - out_of_range: Hard to recognise or doesn't fit above. Examples: far background, tiny fragment, liquid.
 3. "geometry_form": one of ["solid", "hollow", "thin_sheet", "filamentary", "stuffed", "uncertain"]
 4. "appearance_materials": array of 1–3 items, each {{"prototype": <name>, "score": <float 0–1>}}
-   Available prototypes: ["wood", "metal", "brittle_mineral", "rigid_plastic", "flexible_plastic", "rubber", "fabric", "paper_fiber", "foam", "leather", "organic_soft", "liquid", "granular", "unknown"]
+   Prototypes: ["wood", "metal", "brittle_mineral", "rigid_plastic", "flexible_plastic", "rubber", "fabric", "paper_fiber", "foam", "leather", "organic_soft", "liquid", "granular", "unknown"]
 5. "physical_priors": object with 3 sub-fields, each {{"value": <enum>, "confidence": <float 0–1>}}
    - "heaviness_bin": one of ["very_light", "light", "medium", "heavy", "very_heavy", "unknown"]
    - "stiffness_bin": one of ["very_soft", "soft", "medium", "stiff", "very_stiff", "unknown"]
    - "surface_friction_bin": one of ["low", "medium", "high", "unknown"]
 
-Process: (1) examine each view; (2) merge evidence across views; (3) output the JSON. Every field must reflect the combined evidence from all views, not one image only.
+Steps: (1) look at the "mask" panel to locate the target; (2) examine "highlight" and "crop" to understand the target; (3) merge evidence across views if multiple; (4) output JSON.
 Return ONLY valid JSON. No markdown fences, no explanation.
-
