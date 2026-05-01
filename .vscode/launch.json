@@ -16,10 +16,11 @@
                 "--scene","bench",
                 "--prompt-file","prompts/physics_perception_simple.prompt",
                 "--max-views","1",
-                "--view-compose-spec-file","configs/view_compose_h3.json",
+                "--view-compose-spec-file","configs/view_compose_h2.json",
                 // "--model-name","gpt-5.4-mini-2026-03-17",
                 // "--model-name","qwen3-vl-30b-a3b-thinking",
-                "--model-name","gpt-5.4",
+                // "--model-name","gpt-5.4",
+                "--model-name","qwen3.6-27b",
                 "--api-base-url","https://yunwu.ai/v1"
             ],
             "env": {
