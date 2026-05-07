@@ -68,7 +68,7 @@ def _build_prompt(
     batch: ImageBatch,
 ) -> str:
     view_names = [img.view_name for img in batch.images]
-    return config.prompt_template.format(
+    return config.vlm.prompt_template.format(
         dataset=dataset,
         scene=scene,
         object_id=object_id,
@@ -149,29 +149,29 @@ def _dump_debug_batch(
 
 async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Path:
     scene_data = load_scene(
-        config.data_root,
+        config.scene_input.data_root,
         dataset,
         scene,
-        mask_subdir=config.mask_subdir,
-        id_map_source=config.id_map_source,
+        mask_subdir=config.scene_input.mask_subdir,
+        id_map_source=config.scene_input.id_map_source,
     )
     out_dir = config.scene_output_dir(dataset, scene)
     out_dir.mkdir(parents=True, exist_ok=True)
-    output_json = out_dir / _model_to_filename(config.model_name)
+    output_json = out_dir / _model_to_filename(config.vlm.model_name)
     error_log = out_dir / "errors.log"
     debug_dir = out_dir / "debug_inputs"
 
     existing = _load_existing_results(output_json)
-    if config.target_object_id is not None:
-        if config.target_object_id not in scene_data.object_ids:
+    if config.run.target_object_id is not None:
+        if config.run.target_object_id not in scene_data.object_ids:
             raise ValueError(
-                f"Object ID {config.target_object_id} not found in {dataset}/{scene}. "
+                f"Object ID {config.run.target_object_id} not found in {dataset}/{scene}. "
                 f"Available IDs: {scene_data.object_ids[:20]}{'...' if len(scene_data.object_ids) > 20 else ''}"
             )
-        pending_ids = [config.target_object_id]
+        pending_ids = [config.run.target_object_id]
     else:
         pending_ids = [obj_id for obj_id in scene_data.object_ids if obj_id not in existing]
-        if config.single_object_only and pending_ids:
+        if config.run.single_object_only and pending_ids:
             pending_ids = pending_ids[:1]
     if not pending_ids:
         return output_json
@@ -197,7 +197,7 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
                 object_id=obj_id,
                 batch=batch,
             )
-            if config.save_debug_inputs:
+            if config.run.save_debug_inputs:
                 _dump_debug_batch(
                     debug_dir,
                     object_id=obj_id,

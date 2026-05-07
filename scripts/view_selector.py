@@ -68,11 +68,11 @@ def select_views_for_object(obj_id: int, scene_data: SceneData, config: Pipeline
         info = _build_view_info(record, obj_id)
         if info is None:
             continue
-        if info.pixel_count < config.min_pixel_count:
+        if info.pixel_count < config.object_filter.min_pixel_count:
             continue
-        if info.bbox_area_ratio < config.min_bbox_area_ratio:
+        if info.bbox_area_ratio < config.object_filter.min_bbox_area_ratio:
             continue
-        if info.pixel_ratio < config.min_pixel_ratio:
+        if info.pixel_ratio < config.object_filter.min_pixel_ratio:
             continue
         candidates.append(info)
 
@@ -81,6 +81,6 @@ def select_views_for_object(obj_id: int, scene_data: SceneData, config: Pipeline
         reverse=True,
     )
 
-    if config.max_views <= 0:
+    if config.view_render.max_views <= 0:
         return candidates
-    return candidates[: config.max_views]
+    return candidates[: config.view_render.max_views]

@@ -159,9 +159,9 @@ def _render_variant(
             outside_factor=float(opts.get("outside_factor", 0.35)),
         )
     if variant == "overlay":
-        return _draw_overlay(image_rgb, mask, bbox_xyxy, config.overlay_style)
+        return _draw_overlay(image_rgb, mask, bbox_xyxy, config.view_render.overlay_style)
     if variant == "crop":
-        return _make_crop(image_rgb, mask, bbox_xyxy, config.crop_padding_ratio)
+        return _make_crop(image_rgb, mask, bbox_xyxy, config.view_render.crop_padding_ratio)
     raise ValueError(f"Unsupported panel variant: {variant}")
 
 
@@ -306,7 +306,7 @@ def prepare_image_batches(views: List[ViewInfo], config: PipelineConfig) -> List
     if not views:
         return []
 
-    spec = _parse_compose_spec(config.view_compose_spec)
+    spec = _parse_compose_spec(config.view_render.view_compose_spec)
     panels = spec.get("panels")
     assert isinstance(panels, list)
     title_spec = spec["titles"]
