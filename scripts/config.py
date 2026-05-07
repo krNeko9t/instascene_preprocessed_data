@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -53,6 +52,25 @@ def _load_view_compose_spec_file(path: str | Path) -> str:
     if not raw:
         raise ValueError(f"View compose spec file is empty: {p}")
     return raw
+
+
+def resolve_view_compose_fields(*, inline: str, spec_file: str) -> tuple[str, str]:
+    """Resolve final JSON spec and the spec file path string (for bookkeeping)."""
+    inline_s = (inline or "").strip()
+    file_s = (spec_file or "").strip()
+    if inline_s:
+        return inline_s, file_s
+    if file_s:
+        return _load_view_compose_spec_file(file_s), file_s
+    return DEFAULT_VIEW_COMPOSE_SPEC, ""
+
+
+def resolve_vlm_prompt_template(*, prompt_file: str, inline_template: str) -> tuple[str, str]:
+    """Return (prompt_file, template text). File wins when non-empty."""
+    pf = (prompt_file or "").strip()
+    if pf:
+        return pf, _load_prompt_file(pf)
+    return "", (inline_template or DEFAULT_PROMPT_TEMPLATE)
 
 
 @dataclass(slots=True)
@@ -120,89 +138,6 @@ class PipelineConfig:
     view_render: ViewRenderConfig
     vlm: VlmConfig
     run: RunControlConfig
-
-    @classmethod
-    def from_values(
-        cls,
-        *,
-        data_root: str | Path,
-        dataset: str,
-        scene: str,
-        mask_subdir: str,
-        id_map_source: IdMapSource,
-        min_pixel_count: int,
-        min_pixel_ratio: float,
-        min_bbox_area_ratio: float,
-        max_views: int,
-        overlay_style: OverlayStyle,
-        crop_padding_ratio: float,
-        view_compose_spec: str | None,
-        view_compose_spec_file: str | None,
-        api_base_url: str,
-        api_key: str | None,
-        model_name: str,
-        prompt_file: str,
-        prompt_template: str | None,
-        max_concurrent: int,
-        max_retries: int,
-        retry_backoff_seconds: float,
-        request_timeout_seconds: float,
-        output_dir: str,
-        target_object_id: int | None,
-        single_object_only: bool,
-        save_debug_inputs: bool,
-    ) -> PipelineConfig:
-        inline_spec = (view_compose_spec or "").strip()
-        spec_file = (view_compose_spec_file or "").strip()
-        if inline_spec:
-            resolved_spec = inline_spec
-        elif spec_file:
-            resolved_spec = _load_view_compose_spec_file(spec_file)
-        else:
-            resolved_spec = DEFAULT_VIEW_COMPOSE_SPEC
-
-        prompt_resolved = (
-            _load_prompt_file(prompt_file) if prompt_file else (prompt_template or DEFAULT_PROMPT_TEMPLATE)
-        )
-
-        return cls(
-            scene_input=SceneInputConfig(
-                data_root=Path(data_root).expanduser().resolve(),
-                dataset=dataset,
-                scene=scene,
-                mask_subdir=mask_subdir,
-                id_map_source=id_map_source,
-            ),
-            object_filter=ObjectFilterConfig(
-                min_pixel_count=min_pixel_count,
-                min_pixel_ratio=min_pixel_ratio,
-                min_bbox_area_ratio=min_bbox_area_ratio,
-            ),
-            view_render=ViewRenderConfig(
-                max_views=max_views,
-                overlay_style=overlay_style,
-                crop_padding_ratio=crop_padding_ratio,
-                view_compose_spec=resolved_spec,
-                view_compose_spec_file=spec_file,
-            ),
-            vlm=VlmConfig(
-                api_base_url=api_base_url,
-                api_key=api_key or os.getenv("VLM_API_KEY", ""),
-                model_name=model_name,
-                prompt_file=prompt_file,
-                prompt_template=prompt_resolved,
-                max_concurrent=max_concurrent,
-                max_retries=max_retries,
-                retry_backoff_seconds=retry_backoff_seconds,
-                request_timeout_seconds=request_timeout_seconds,
-            ),
-            run=RunControlConfig(
-                output_dir=output_dir,
-                target_object_id=target_object_id,
-                single_object_only=single_object_only,
-                save_debug_inputs=save_debug_inputs,
-            ),
-        )
 
     def scene_root(self, dataset: str | None = None, scene: str | None = None) -> Path:
         ds = dataset or self.scene_input.dataset
