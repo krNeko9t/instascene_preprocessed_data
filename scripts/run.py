@@ -29,11 +29,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--scene", type=str, default="bench", help="Scene name or 'all'")
     parser.add_argument("--mask-subdir", type=str, default="mask")
     parser.add_argument(
+        "--image-subdir",
+        type=str,
+        default="images",
+        help="Subdirectory of each scene for RGB images (e.g. rgb for RE10K, images for Infinigen-style).",
+    )
+    parser.add_argument(
         "--id-map-source",
         type=str,
         default="npy",
-        choices=["npy", "png"],
-        help="ID map source: npy from id_maps/ or png from sam/<mask_subdir>/",
+        choices=["npy", "png", "sam2_json"],
+        help="ID map source: npy from id_maps/, png from sam/<mask_subdir>/, or sam2_json (auto_masks.json RLE).",
+    )
+    parser.add_argument(
+        "--sam2-json",
+        type=str,
+        default="",
+        help="Path to auto_masks.json (optional; default: <scene_root>/../sam2_results/<scene>/auto_masks.json).",
     )
     parser.add_argument("--min-pixel-count", type=int, default=300)
     parser.add_argument("--min-pixel-ratio", type=float, default=0.15)
@@ -130,6 +142,12 @@ async def main_async() -> None:
         inline_template=args.prompt_template,
     )
 
+    sam2_json_path = (
+        Path(args.sam2_json).expanduser().resolve()
+        if (args.sam2_json or "").strip()
+        else None
+    )
+
     cfg = PipelineConfig(
         scene_input=SceneInputConfig(
             data_root=data_root,
@@ -137,6 +155,8 @@ async def main_async() -> None:
             scene=args.scene,
             mask_subdir=args.mask_subdir,
             id_map_source=args.id_map_source,
+            image_subdir=args.image_subdir,
+            sam2_json_path=sam2_json_path,
         ),
         object_filter=ObjectFilterConfig(
             min_pixel_count=args.min_pixel_count,

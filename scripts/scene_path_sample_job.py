@@ -117,6 +117,8 @@ def records_to_manifest_scenes(
         }
         if e.id_map_dir is not None:
             row["id_map_dir"] = path_for_manifest_json(e.id_map_dir, relative_to=relative_to)
+        if e.id_map_json is not None:
+            row["id_map_json"] = path_for_manifest_json(e.id_map_json, relative_to=relative_to)
         rows.append(row)
     return rows
 

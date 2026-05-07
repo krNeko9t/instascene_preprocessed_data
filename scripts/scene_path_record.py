@@ -13,3 +13,4 @@ class ScenePathRecord:
     scene_root: Path
     image_dir: Path
     id_map_dir: Path | None
+    id_map_json: Path | None = None

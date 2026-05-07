@@ -1,7 +1,7 @@
 """Scene path manifest: JSON with ``dataset_root`` and explicit per-scene paths.
 
 Each dataset-specific ``sample_*`` script knows its on-disk layout and writes this shape.
-Optional ``id_map_dir`` per scene (e.g. re10k extract has ``rgb`` + ``cam`` only).
+Optional ``id_map_dir`` or ``id_map_json`` per scene (e.g. RE10k may only have ``id_map_json`` for SAM2 ``auto_masks.json``).
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ class ScenePathsManifestEntry:
     scene_root: str
     image_dir: str
     id_map_dir: str | None
+    id_map_json: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -41,6 +42,7 @@ class ResolvedScenePaths:
     scene_root: Path
     image_dir: Path
     id_map_dir: Path | None
+    id_map_json: Path | None = None
 
     @property
     def scene_key(self) -> str:
@@ -59,12 +61,16 @@ def resolve_scene_paths(entry: ScenePathsManifestEntry, dataset_root: Path) -> R
     id_map: Path | None = None
     if entry.id_map_dir:
         id_map = _resolve_path(entry.id_map_dir, root)
+    id_json: Path | None = None
+    if entry.id_map_json:
+        id_json = _resolve_path(entry.id_map_json, root)
     return ResolvedScenePaths(
         partition=entry.partition,
         scene_name=entry.scene_name,
         scene_root=_resolve_path(entry.scene_root, root),
         image_dir=_resolve_path(entry.image_dir, root),
         id_map_dir=id_map,
+        id_map_json=id_json,
     )
 
 
@@ -92,6 +98,12 @@ def load_scene_paths_manifest(path: Path) -> ScenePathsManifest:
             id_map_dir = None
         else:
             id_map_dir = str(raw_id)
+        raw_ij = item.get("id_map_json")
+        id_map_json: str | None
+        if raw_ij is None or raw_ij == "":
+            id_map_json = None
+        else:
+            id_map_json = str(raw_ij)
         scenes.append(
             ScenePathsManifestEntry(
                 partition=str(item["partition"]),
@@ -99,6 +111,7 @@ def load_scene_paths_manifest(path: Path) -> ScenePathsManifest:
                 scene_root=str(item["scene_root"]),
                 image_dir=str(item["image_dir"]),
                 id_map_dir=id_map_dir,
+                id_map_json=id_map_json,
             )
         )
 

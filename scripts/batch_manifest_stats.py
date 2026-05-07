@@ -37,8 +37,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--id-map-source",
         type=str,
         default="png",
-        choices=["npy", "png"],
-        help="Mask file type under each scene's id_map_dir (default: png for infinigen-style segmentation PNGs)",
+        choices=["npy", "png", "sam2_json"],
+        help=(
+            "Mask format under id_map_dir (npy|png), or sam2_json when manifest scenes only have "
+            "id_map_json (auto_masks.json). Ignored for scenes that only specify id_map_json (RE10K)."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -72,7 +75,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_arg_parser().parse_args()
     manifest_path = Path(args.manifest).expanduser().resolve()
-    id_map_source: Literal["npy", "png"] = args.id_map_source  # type: ignore[assignment]
+    id_map_source: Literal["npy", "png", "sam2_json"] = args.id_map_source  # type: ignore[assignment]
 
     doc = load_scene_paths_manifest(manifest_path)
     pairing = effective_pairing(doc, args.pair_by)
@@ -91,6 +94,7 @@ def main() -> int:
             "resolved_scene_root": str(resolved.scene_root),
             "resolved_image_dir": str(resolved.image_dir),
             "resolved_id_map_dir": str(resolved.id_map_dir) if resolved.id_map_dir is not None else None,
+            "resolved_id_map_json": str(resolved.id_map_json) if resolved.id_map_json is not None else None,
         }
         if stats.error is not None:
             row["error"] = stats.error

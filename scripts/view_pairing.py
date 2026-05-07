@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Sequence, Tuple
 
 SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"}
 
-IdMapSource = Literal["npy", "png"]
+IdMapSource = Literal["npy", "png", "sam2_json"]
 
 # processed_infinigen_extracted: Image_0_0_0001_0.png <-> ObjectSegmentation_0_0_0001_0.png
 PairingStrategy = Literal["stem", "infinigen"]

@@ -7,7 +7,7 @@ from scene_path_sample_job import SampleJobConfig, run_sample_job
 _CONFIG = SampleJobConfig(
     description=(
         "Sample scenes under InsScene-15K/processed_re10k_extracted/processed_re10k and write a scene-path manifest. "
-        "Entries omit id_map_dir (rgb-only); batch stats will count views and set n_objects=0."
+        "Includes optional id_map_json when sam2_results/<scene>/auto_masks.json exists (RLE masklet)."
     ),
     default_root=RE10K_ROOT,
     discover=discover_re10k_extracted,

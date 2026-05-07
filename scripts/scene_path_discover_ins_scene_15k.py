@@ -40,7 +40,7 @@ def discover_infinigen_extracted(dataset_root: Path) -> list[ScenePathRecord]:
 
 
 def discover_re10k_extracted(scenes_root: Path) -> list[ScenePathRecord]:
-    """One directory per scene with ``rgb/`` and ``cam/`` (no instance masks in this extract)."""
+    """One directory per scene with ``rgb/`` and ``cam/``; optional ``sam2_results/<id>/auto_masks.json``."""
     out: list[ScenePathRecord] = []
     for child in sorted(scenes_root.iterdir()):
         if not child.is_dir() or child.name.startswith("."):
@@ -49,6 +49,8 @@ def discover_re10k_extracted(scenes_root: Path) -> list[ScenePathRecord]:
         cam = child / "cam"
         if not rgb.is_dir() or not cam.is_dir():
             continue
+        sam2_json = scenes_root / "sam2_results" / child.name / "auto_masks.json"
+        id_map_json = sam2_json.resolve() if sam2_json.is_file() else None
         out.append(
             ScenePathRecord(
                 partition="processed_re10k",
@@ -56,6 +58,7 @@ def discover_re10k_extracted(scenes_root: Path) -> list[ScenePathRecord]:
                 scene_root=child.resolve(),
                 image_dir=rgb.resolve(),
                 id_map_dir=None,
+                id_map_json=id_map_json,
             )
         )
     out.sort(key=lambda e: e.scene_name)

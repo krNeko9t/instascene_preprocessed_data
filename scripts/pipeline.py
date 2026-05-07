@@ -154,6 +154,8 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
         scene,
         mask_subdir=config.scene_input.mask_subdir,
         id_map_source=config.scene_input.id_map_source,
+        image_subdir=config.scene_input.image_subdir,
+        sam2_json_path=config.scene_input.sam2_json_path,
     )
     out_dir = config.scene_output_dir(dataset, scene)
     out_dir.mkdir(parents=True, exist_ok=True)

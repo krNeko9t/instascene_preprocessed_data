@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 OverlayStyle = str
-IdMapSource = Literal["npy", "png"]
+IdMapSource = Literal["npy", "png", "sam2_json"]
 
 DEFAULT_PROMPT_TEMPLATE = (
     "You are given images of the same object from multiple views in a scene. "
@@ -82,6 +82,8 @@ class SceneInputConfig:
     scene: str = "bench"
     mask_subdir: str = "mask"
     id_map_source: IdMapSource = "npy"
+    image_subdir: str = "images"
+    sam2_json_path: Path | None = None
 
 
 @dataclass(slots=True)
