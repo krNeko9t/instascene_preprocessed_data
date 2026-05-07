@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DEFAULT_DATASET_ROOT = (
+DEFAULT_INFINIGEN_ROOT = (
     "/mnt/shared-storage-gpfs2/solution-gpfs02/liaoyuanjun/dataset/"
     "InsScene-15K/processed_infinigen_extracted"
 )
@@ -24,8 +24,8 @@ class SceneEntry:
     id_map_dir: Path
 
 
-def discover_scenes(dataset_root: Path) -> list[SceneEntry]:
-    """List scenes that have frames/Image/camera_0 and frames/ObjectSegmentation/camera_0."""
+def discover_infinigen_scenes(dataset_root: Path) -> list[SceneEntry]:
+    """List scenes under ``scene_*`` with ``frames/Image/camera_0`` and ``frames/ObjectSegmentation/camera_0``."""
     out: list[SceneEntry] = []
     partitions = sorted(
         p for p in dataset_root.glob("scene_*") if p.is_dir() and not p.name.startswith(".")
@@ -65,13 +65,16 @@ def _path_for_json(path: Path, *, relative_to: Path | None) -> str:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Randomly sample InsScene (processed_infinigen_extracted) scenes and write JSON."
+        description=(
+            "Randomly sample scenes under processed_infinigen_extracted layout and write a scene-path manifest JSON. "
+            "re10k / spp2 need their own layout-specific scripts when you define those trees."
+        )
     )
     parser.add_argument(
         "--root",
         type=str,
-        default=DEFAULT_DATASET_ROOT,
-        help=f"Dataset root containing scene_* partitions (default: {DEFAULT_DATASET_ROOT})",
+        default="",
+        help=f"Dataset root (scene_* partitions). If omitted, uses: {DEFAULT_INFINIGEN_ROOT}",
     )
     parser.add_argument(
         "-n",
@@ -124,7 +127,12 @@ def main() -> int:
         print("error: --num-scenes / -n must not be 0 (use -1 for all scenes)", file=sys.stderr)
         return 2
 
-    dataset_root = Path(args.root).expanduser().resolve()
+    dataset_root = (
+        Path(args.root).expanduser().resolve()
+        if args.root.strip()
+        else Path(DEFAULT_INFINIGEN_ROOT).expanduser().resolve()
+    )
+
     if not dataset_root.is_dir():
         print(f"error: dataset root is not a directory: {dataset_root}", file=sys.stderr)
         return 1
@@ -133,7 +141,7 @@ def main() -> int:
     if args.relative_to.strip():
         relative_to = Path(args.relative_to).expanduser().resolve()
 
-    candidates = discover_scenes(dataset_root)
+    candidates = discover_infinigen_scenes(dataset_root)
     n_candidates = len(candidates)
     if n_candidates == 0:
         print(f"error: no valid scenes found under: {dataset_root}", file=sys.stderr)

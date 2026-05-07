@@ -8,7 +8,18 @@ import cv2
 import numpy as np
 from PIL import Image
 
-SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"}
+from view_pairing import SUPPORTED_IMAGE_SUFFIXES, list_mask_paths, pair_image_and_masks
+
+__all__ = [
+    "SUPPORTED_IMAGE_SUFFIXES",
+    "SceneData",
+    "ViewRecord",
+    "load_scene",
+    "load_scene_from_npy",
+    "load_scene_from_png",
+    "_load_mask",
+    "_load_npy_id_map",
+]
 
 
 @dataclass(slots=True)
@@ -55,32 +66,21 @@ def _resize_mask_to_image(mask: np.ndarray, image_path: Path) -> np.ndarray:
     return resized.astype(mask.dtype, copy=False)
 
 
-def _build_image_index(image_dir: Path) -> Dict[str, Path]:
-    image_index: Dict[str, Path] = {}
-    for path in sorted(image_dir.iterdir()):
-        if not path.is_file():
-            continue
-        if path.suffix not in SUPPORTED_IMAGE_SUFFIXES:
-            continue
-        image_index[path.stem] = path
-    return image_index
-
-
-def load_scene_from_png(scene_root: Path, image_index: Dict[str, Path], mask_subdir: str) -> tuple[Path, List[Path]]:
+def load_scene_from_png(scene_root: Path, mask_subdir: str) -> tuple[Path, List[Path]]:
     mask_dir = scene_root / "sam" / mask_subdir
     if not mask_dir.exists():
         raise FileNotFoundError(f"Mask directory does not exist: {mask_dir}")
-    mask_files = sorted(p for p in mask_dir.iterdir() if p.is_file() and p.suffix.lower() == ".png")
+    mask_files = list_mask_paths(mask_dir, "png")
     if not mask_files:
         raise RuntimeError(f"No mask files found in: {mask_dir}")
     return mask_dir, mask_files
 
 
-def load_scene_from_npy(scene_root: Path, image_index: Dict[str, Path]) -> tuple[Path, List[Path]]:
+def load_scene_from_npy(scene_root: Path) -> tuple[Path, List[Path]]:
     id_map_dir = scene_root / "id_maps"
     if not id_map_dir.exists():
         raise FileNotFoundError(f"ID map directory does not exist: {id_map_dir}")
-    id_map_files = sorted(p for p in id_map_dir.iterdir() if p.is_file() and p.suffix.lower() == ".npy")
+    id_map_files = list_mask_paths(id_map_dir, "npy")
     if not id_map_files:
         raise RuntimeError(f"No npy id maps found in: {id_map_dir}")
     return id_map_dir, id_map_files
@@ -101,25 +101,20 @@ def load_scene(
     if not image_dir.exists():
         raise FileNotFoundError(f"Image directory does not exist: {image_dir}")
 
-    image_index = _build_image_index(image_dir)
     if id_map_source == "npy":
-        map_dir, map_files = load_scene_from_npy(scene_root, image_index)
+        map_dir, map_files = load_scene_from_npy(scene_root)
     elif id_map_source == "png":
-        map_dir, map_files = load_scene_from_png(scene_root, image_index, mask_subdir)
+        map_dir, map_files = load_scene_from_png(scene_root, mask_subdir)
     else:
         raise ValueError(f"Unsupported id_map_source: {id_map_source}")
+
+    pairs = pair_image_and_masks(image_dir, map_files, strategy="stem")
 
     views: List[ViewRecord] = []
     object_id_set: set[int] = set()
     object_to_views: Dict[int, List[ViewRecord]] = {}
 
-    for map_path in map_files:
-        view_name = map_path.stem
-        image_path = image_index.get(view_name)
-        if image_path is None:
-            # Skip masks without corresponding image.
-            continue
-
+    for view_name, image_path, map_path in pairs:
         if id_map_source == "npy":
             mask = _load_npy_id_map(map_path)
         else:

@@ -6,3 +6,4 @@ zipnerf/
 *__pycache__*
 outputs/
 debug/
+tmp/
