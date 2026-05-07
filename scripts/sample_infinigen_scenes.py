@@ -8,11 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-
-DEFAULT_INFINIGEN_ROOT = (
-    "/mnt/shared-storage-gpfs2/solution-gpfs02/liaoyuanjun/dataset/"
-    "InsScene-15K/processed_infinigen_extracted"
-)
+from ins_scene_15k_roots import INFINIGEN_ROOT, path_for_manifest_json
 
 
 @dataclass(slots=True, frozen=True)
@@ -54,27 +50,18 @@ def discover_infinigen_scenes(dataset_root: Path) -> list[SceneEntry]:
     return out
 
 
-def _path_for_json(path: Path, *, relative_to: Path | None) -> str:
-    if relative_to is None:
-        return str(path)
-    try:
-        return str(path.relative_to(relative_to.resolve()))
-    except ValueError:
-        return str(path)
-
-
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Randomly sample scenes under processed_infinigen_extracted layout and write a scene-path manifest JSON. "
-            "re10k / spp2 need their own layout-specific scripts when you define those trees."
+            "Sample scenes under InsScene-15K/processed_infinigen_extracted and write a scene-path manifest JSON "
+            "(see also sample_re10k_scenes.py, sample_scannetpp_v2_scenes.py)."
         )
     )
     parser.add_argument(
         "--root",
         type=str,
         default="",
-        help=f"Dataset root (scene_* partitions). If omitted, uses: {DEFAULT_INFINIGEN_ROOT}",
+        help=f"Dataset root (scene_* partitions). If omitted, uses: {INFINIGEN_ROOT}",
     )
     parser.add_argument(
         "-n",
@@ -130,7 +117,7 @@ def main() -> int:
     dataset_root = (
         Path(args.root).expanduser().resolve()
         if args.root.strip()
-        else Path(DEFAULT_INFINIGEN_ROOT).expanduser().resolve()
+        else INFINIGEN_ROOT.expanduser().resolve()
     )
 
     if not dataset_root.is_dir():
@@ -177,6 +164,7 @@ def main() -> int:
     base = relative_to if relative_to is not None else None
     payload = {
         "dataset_root": str(dataset_root),
+        "pair_by": "infinigen",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "num_candidates": n_candidates,
         "num_selected": len(selected),
@@ -188,9 +176,9 @@ def main() -> int:
             {
                 "partition": e.partition,
                 "scene_name": e.scene_name,
-                "scene_root": _path_for_json(e.scene_root, relative_to=base),
-                "image_dir": _path_for_json(e.image_dir, relative_to=base),
-                "id_map_dir": _path_for_json(e.id_map_dir, relative_to=base),
+                "scene_root": path_for_manifest_json(e.scene_root, relative_to=base),
+                "image_dir": path_for_manifest_json(e.image_dir, relative_to=base),
+                "id_map_dir": path_for_manifest_json(e.id_map_dir, relative_to=base),
             }
             for e in selected
         ],

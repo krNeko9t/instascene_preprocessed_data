@@ -8,7 +8,7 @@ import numpy as np
 
 from data_loader import _load_mask, _load_npy_id_map
 from infinigen_manifest import ResolvedScenePaths
-from view_pairing import IdMapSource, PairingStrategy, list_mask_paths, pair_image_and_masks
+from view_pairing import IdMapSource, PairingStrategy, build_image_index, list_mask_paths, pair_image_and_masks
 
 
 @dataclass(slots=True)
@@ -50,6 +50,14 @@ def summarize_manifest_scene(
     try:
         if not resolved.image_dir.is_dir():
             raise FileNotFoundError(f"image_dir is not a directory: {resolved.image_dir}")
+        if resolved.id_map_dir is None:
+            n_views = len(build_image_index(resolved.image_dir))
+            return ViewObjectStats(
+                scene_key=resolved.scene_key,
+                n_views=n_views,
+                n_objects=0,
+                error=None,
+            )
         if not resolved.id_map_dir.is_dir():
             raise FileNotFoundError(f"id_map_dir is not a directory: {resolved.id_map_dir}")
         mask_paths = list_mask_paths(resolved.id_map_dir, id_map_source)

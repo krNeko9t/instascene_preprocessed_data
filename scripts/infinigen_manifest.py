@@ -1,7 +1,7 @@
 """Scene path manifest: JSON with ``dataset_root`` and explicit per-scene paths.
 
-Any tool that knows how to walk a dataset's on-disk layout can emit this shape; readers
-only resolve paths and do not guess directory structure.
+Each dataset-specific ``sample_*`` script knows its on-disk layout and writes this shape.
+Optional ``id_map_dir`` per scene (e.g. re10k extract has ``rgb`` + ``cam`` only).
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ class ScenePathsManifestEntry:
     scene_name: str
     scene_root: str
     image_dir: str
-    id_map_dir: str
+    id_map_dir: str | None
 
 
 @dataclass(slots=True, frozen=True)
@@ -40,7 +40,7 @@ class ResolvedScenePaths:
     scene_name: str
     scene_root: Path
     image_dir: Path
-    id_map_dir: Path
+    id_map_dir: Path | None
 
     @property
     def scene_key(self) -> str:
@@ -56,12 +56,15 @@ def _resolve_path(raw: str, dataset_root: Path) -> Path:
 
 def resolve_scene_paths(entry: ScenePathsManifestEntry, dataset_root: Path) -> ResolvedScenePaths:
     root = dataset_root.resolve()
+    id_map: Path | None = None
+    if entry.id_map_dir:
+        id_map = _resolve_path(entry.id_map_dir, root)
     return ResolvedScenePaths(
         partition=entry.partition,
         scene_name=entry.scene_name,
         scene_root=_resolve_path(entry.scene_root, root),
         image_dir=_resolve_path(entry.image_dir, root),
-        id_map_dir=_resolve_path(entry.id_map_dir, root),
+        id_map_dir=id_map,
     )
 
 
@@ -80,17 +83,22 @@ def load_scene_paths_manifest(path: Path) -> ScenePathsManifest:
     for i, item in enumerate(data["scenes"]):
         if not isinstance(item, dict):
             raise ValueError(f"scenes[{i}] must be an object")
-        required = ("partition", "scene_name", "scene_root", "image_dir", "id_map_dir")
-        for key in required:
+        for key in ("partition", "scene_name", "scene_root", "image_dir"):
             if key not in item:
                 raise ValueError(f"scenes[{i}] missing key {key!r}")
+        raw_id = item.get("id_map_dir")
+        id_map_dir: str | None
+        if raw_id is None or raw_id == "":
+            id_map_dir = None
+        else:
+            id_map_dir = str(raw_id)
         scenes.append(
             ScenePathsManifestEntry(
                 partition=str(item["partition"]),
                 scene_name=str(item["scene_name"]),
                 scene_root=str(item["scene_root"]),
                 image_dir=str(item["image_dir"]),
-                id_map_dir=str(item["id_map_dir"]),
+                id_map_dir=id_map_dir,
             )
         )
 

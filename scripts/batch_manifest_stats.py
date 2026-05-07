@@ -6,23 +6,32 @@ import sys
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from infinigen_manifest import load_scene_paths_manifest, resolve_scene_paths
+from infinigen_manifest import ScenePathsManifest, load_scene_paths_manifest, resolve_scene_paths
 from scene_view_object_stats import summarize_manifest_scene
 from view_pairing import PairingStrategy
+
+
+def effective_pairing(doc: ScenePathsManifest, cli_value: str) -> PairingStrategy:
+    if cli_value != "auto":
+        return cast(PairingStrategy, cli_value)
+    meta = doc.metadata.get("pair_by")
+    if meta in ("stem", "infinigen"):
+        return cast(PairingStrategy, meta)
+    return "infinigen"
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Count views and distinct object ids per scene from a scene-path manifest JSON "
-            "(explicit paths per scene; e.g. produced by sample_infinigen_scenes.py)."
+            "Count views and distinct object ids per scene from a scene-path manifest "
+            "(from sample_infinigen_scenes, sample_re10k_scenes, or sample_scannetpp_v2_scenes)."
         ),
     )
     parser.add_argument(
         "--manifest",
         type=str,
         required=True,
-        help="Path to manifest JSON (e.g. from sample_infinigen_scenes.py)",
+        help="Path to manifest JSON (from sample_infinigen_scenes / sample_re10k_scenes / sample_scannetpp_v2_scenes)",
     )
     parser.add_argument(
         "--id-map-source",
@@ -50,11 +59,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pair-by",
         type=str,
-        default="infinigen",
-        choices=["stem", "infinigen"],
+        default="auto",
+        choices=["auto", "stem", "infinigen"],
         help=(
-            "How to match image files to masks: infinigen=Image_* vs ObjectSegmentation_* "
-            "(infinigen Image_/ObjectSegmentation_ frames); stem=same basename (classic pipeline layout)"
+            "auto: use manifest top-level pair_by if set (stem|infinigen), else infinigen. "
+            "infinigen=Image_* vs ObjectSegmentation_*; stem=same basename (e.g. ScanNet++ jpg/png)."
         ),
     )
     return parser
@@ -64,9 +73,9 @@ def main() -> int:
     args = build_arg_parser().parse_args()
     manifest_path = Path(args.manifest).expanduser().resolve()
     id_map_source: Literal["npy", "png"] = args.id_map_source  # type: ignore[assignment]
-    pairing = cast(PairingStrategy, args.pair_by)
 
     doc = load_scene_paths_manifest(manifest_path)
+    pairing = effective_pairing(doc, args.pair_by)
     scene_rows: list[dict[str, Any]] = []
     n_errors = 0
 
@@ -81,7 +90,7 @@ def main() -> int:
             "n_objects": stats.n_objects,
             "resolved_scene_root": str(resolved.scene_root),
             "resolved_image_dir": str(resolved.image_dir),
-            "resolved_id_map_dir": str(resolved.id_map_dir),
+            "resolved_id_map_dir": str(resolved.id_map_dir) if resolved.id_map_dir is not None else None,
         }
         if stats.error is not None:
             row["error"] = stats.error
