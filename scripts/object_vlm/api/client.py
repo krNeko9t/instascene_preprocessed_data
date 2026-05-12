@@ -5,8 +5,8 @@ from typing import Sequence
 
 from openai import AsyncOpenAI
 
-from config import PipelineConfig
-from image_preparer import PreparedImage
+from ..config import PipelineConfig
+from ..views.types import PreparedImage
 
 
 def _extract_text(content: object) -> str:

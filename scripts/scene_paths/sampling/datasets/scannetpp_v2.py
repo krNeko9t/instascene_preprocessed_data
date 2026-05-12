@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ins_scene_15k_roots import SCANNETPPV2_ROOT
-from scene_path_discover_ins_scene_15k import discover_scannetpp_v2_extracted
-from scene_path_sample_job import SampleJobConfig, run_sample_job
+from ...paths.discover import discover_scannetpp_v2_extracted
+from ...paths.roots import SCANNETPPV2_ROOT
+from ..job import SampleJobConfig, run_sample_job
 
 _CONFIG = SampleJobConfig(
     description=(

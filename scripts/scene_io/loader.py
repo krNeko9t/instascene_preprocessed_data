@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from sam2_auto_masks import load_auto_masks_document, pair_sorted_rgb_with_masklet
-from view_pairing import SUPPORTED_IMAGE_SUFFIXES, list_mask_paths, pair_image_and_masks
+from .pairing import SUPPORTED_IMAGE_SUFFIXES, list_mask_paths, pair_image_and_masks
+from .sam2_masks import load_auto_masks_document, pair_sorted_rgb_with_masklet
 
 __all__ = [
     "SUPPORTED_IMAGE_SUFFIXES",

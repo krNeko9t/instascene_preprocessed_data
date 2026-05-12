@@ -1,6 +1,6 @@
 """Scene path manifest: JSON with ``dataset_root`` and explicit per-scene paths.
 
-Each dataset-specific ``sample_*`` script knows its on-disk layout and writes this shape.
+Each dataset-specific sampler knows its on-disk layout and writes this shape.
 Optional ``id_map_dir`` or ``id_map_json`` per scene (e.g. RE10k may only have ``id_map_json`` for SAM2 ``auto_masks.json``).
 """
 

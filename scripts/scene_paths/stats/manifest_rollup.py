@@ -6,9 +6,10 @@ import sys
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from infinigen_manifest import ScenePathsManifest, load_scene_paths_manifest, resolve_scene_paths
-from scene_view_object_stats import summarize_manifest_scene
-from view_pairing import PairingStrategy
+from scripts.scene_io.pairing import PairingStrategy
+
+from ..manifest.paths_manifest import ScenePathsManifest, load_scene_paths_manifest, resolve_scene_paths
+from .view_object_counts import summarize_manifest_scene
 
 
 def effective_pairing(doc: ScenePathsManifest, cli_value: str) -> PairingStrategy:
@@ -24,14 +25,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Count views and distinct object ids per scene from a scene-path manifest "
-            "(from sample_infinigen_scenes, sample_re10k_scenes, or sample_scannetpp_v2_scenes)."
+            "(from scene_paths.sampling.datasets: infinigen, re10k, scannetpp_v2)."
         ),
     )
     parser.add_argument(
         "--manifest",
         type=str,
         required=True,
-        help="Path to manifest JSON (from sample_infinigen_scenes / sample_re10k_scenes / sample_scannetpp_v2_scenes)",
+        help="Path to manifest JSON from sampling tools",
     )
     parser.add_argument(
         "--id-map-source",

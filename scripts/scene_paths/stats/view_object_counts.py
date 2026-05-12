@@ -6,9 +6,10 @@ from typing import Sequence, Tuple
 
 import numpy as np
 
-from data_loader import _load_mask, _load_npy_id_map, build_views_from_sam2_json
-from infinigen_manifest import ResolvedScenePaths
-from view_pairing import IdMapSource, PairingStrategy, build_image_index, list_mask_paths, pair_image_and_masks
+from scripts.scene_io.loader import _load_mask, _load_npy_id_map, build_views_from_sam2_json
+from scripts.scene_io.pairing import IdMapSource, PairingStrategy, build_image_index, list_mask_paths, pair_image_and_masks
+
+from ..manifest.paths_manifest import ResolvedScenePaths
 
 
 @dataclass(slots=True)
@@ -42,7 +43,7 @@ def summarize_from_paired_masks(
 
 
 def summarize_from_sam2_json(scene_key: str, image_dir: Path, auto_masks_json: Path) -> ViewObjectStats:
-    """Same decode + pairing as :func:`data_loader.build_views_from_sam2_json`; union distinct ids ≥ 0."""
+    """Same decode + pairing as :func:`scripts.scene_io.loader.build_views_from_sam2_json`; union distinct ids ≥ 0."""
     _, views = build_views_from_sam2_json(image_dir, auto_masks_json)
     object_ids: set[int] = set()
     for v in views:

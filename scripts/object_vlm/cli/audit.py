@@ -5,8 +5,8 @@ how many images it sees and what each contains.
 
 Run from anywhere (with deps installed), e.g.:
 
-  cd /path/to/instascene_preprocessed_data/scripts
-  python ask_vlm_image_audit.py \\
+  cd /path/to/instascene_preprocessed_data
+  python -m scripts.object_vlm.cli.audit \\
     --api-base-url https://api.openai.com/v1 \\
     --model-name gpt-4.1-mini \\
     --images img1.jpg img2.jpg
