@@ -6,6 +6,19 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from instascene.vlm.config import (
+    DEFAULT_PROMPT_TEMPLATE,
+    ObjectFilterConfig,
+    PipelineConfig,
+    RunControlConfig,
+    SceneInputConfig,
+    ViewRenderConfig,
+    VlmConfig,
+    resolve_view_compose_fields,
+    resolve_vlm_prompt_template,
+)
+from instascene.vlm.pipeline import list_datasets, list_scenes, process_scene
+
 
 def _parse_overlay_style_arg(value: str) -> str:
     allowed = {"contour", "bbox", "semitransparent", "all"}
@@ -21,8 +34,6 @@ def _parse_overlay_style_arg(value: str) -> str:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    from config import DEFAULT_PROMPT_TEMPLATE
-
     parser = argparse.ArgumentParser(description="VLM scene object processing pipeline")
     parser.add_argument("--data-root", type=str, default=".")
     parser.add_argument("--dataset", type=str, default="3dovs", help="Dataset name or 'all'")
@@ -113,18 +124,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
 async def main_async() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
-
-    from config import (
-        ObjectFilterConfig,
-        PipelineConfig,
-        RunControlConfig,
-        SceneInputConfig,
-        ViewRenderConfig,
-        VlmConfig,
-        resolve_view_compose_fields,
-        resolve_vlm_prompt_template,
-    )
-    from pipeline import list_datasets, list_scenes, process_scene
 
     data_root = Path(args.data_root).expanduser().resolve()
     if args.output_dir.strip():

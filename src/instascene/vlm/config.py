@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
-OverlayStyle = str
-IdMapSource = Literal["npy", "png", "sam2_json"]
+from instascene.types import IdMapSource, OverlayStyle
 
 DEFAULT_PROMPT_TEMPLATE = (
     "You are given images of the same object from multiple views in a scene. "

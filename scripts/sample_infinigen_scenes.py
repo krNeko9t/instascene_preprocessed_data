@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ins_scene_15k_roots import INFINIGEN_ROOT
-from scene_path_discover_ins_scene_15k import discover_infinigen_extracted
-from scene_path_sample_job import SampleJobConfig, run_sample_job
+from instascene.manifest.roots import INFINIGEN_ROOT
+from instascene.manifest.sample import SampleJobConfig, run_sample_job
+from instascene.scene.discovery.ins_scene_15k import discover_infinigen_extracted
 
 _CONFIG = SampleJobConfig(
     description=(

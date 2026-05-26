@@ -10,6 +10,8 @@ from typing import Any, List, Sequence, Tuple
 import numpy as np
 from pycocotools import mask as mask_util
 
+from instascene.types import SUPPORTED_IMAGE_SUFFIXES
+
 __all__ = [
     "decode_masklet_frame_to_id_map",
     "load_auto_masks_document",
@@ -52,16 +54,14 @@ def pair_sorted_rgb_with_masklet(
     image_dir: Path,
     masklet: List[List[dict[str, Any]]],
     *,
-    supported_suffixes: set[str],
+    supported_suffixes: set[str] | None = None,
 ) -> List[Tuple[str, Path, int, np.ndarray]]:
-    """Sort rgb files under ``image_dir``, align with ``masklet`` by index, return per-frame id maps.
-
-    Returns tuples ``(view_stem, image_path, frame_index, id_map)``.
-    """
+    """Sort rgb files under ``image_dir``, align with ``masklet`` by index, return per-frame id maps."""
+    suffixes = supported_suffixes or SUPPORTED_IMAGE_SUFFIXES
     image_paths = sorted(
         p
         for p in image_dir.iterdir()
-        if p.is_file() and p.suffix in supported_suffixes
+        if p.is_file() and p.suffix in suffixes
     )
     n_img = len(image_paths)
     n_mask = len(masklet)

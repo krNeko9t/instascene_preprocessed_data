@@ -6,9 +6,10 @@ import sys
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from infinigen_manifest import ScenePathsManifest, load_scene_paths_manifest, resolve_scene_paths
-from scene_view_object_stats import summarize_manifest_scene
-from view_pairing import PairingStrategy
+from instascene.manifest.io import load_scene_paths_manifest, resolve_scene_paths
+from instascene.manifest.models import ScenePathsManifest
+from instascene.stats.scene_views import summarize_manifest_scene
+from instascene.types import PairingStrategy
 
 
 def effective_pairing(doc: ScenePathsManifest, cli_value: str) -> PairingStrategy:

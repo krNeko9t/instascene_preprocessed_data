@@ -9,8 +9,8 @@ from typing import Any, List
 import cv2
 import numpy as np
 
-from config import PipelineConfig
-from view_selector import ViewInfo
+from instascene.vlm.config import PipelineConfig
+from instascene.vlm.selector import ViewInfo
 
 
 def _normalize_overlay_styles(style: str) -> set[str]:

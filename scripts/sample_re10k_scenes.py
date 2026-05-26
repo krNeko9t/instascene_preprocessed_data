@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from ins_scene_15k_roots import RE10K_ROOT
-from scene_path_discover_ins_scene_15k import discover_re10k_extracted
-from scene_path_sample_job import SampleJobConfig, run_sample_job
+from instascene.manifest.roots import RE10K_ROOT
+from instascene.manifest.sample import SampleJobConfig, run_sample_job
+from instascene.scene.discovery.ins_scene_15k import discover_re10k_extracted
 
 _CONFIG = SampleJobConfig(
     description=(
-        "Sample scenes under InsScene-15K/processed_re10k_extracted/processed_re10k and write a scene-path manifest. "
-        "Includes optional id_map_json when sam2_results/<scene>/auto_masks.json exists (RLE masklet)."
+        "Sample scenes under InsScene-15K/processed_re10k_extracted/processed_re10k "
+        "and write a scene-path manifest JSON."
     ),
     default_root=RE10K_ROOT,
     discover=discover_re10k_extracted,
     pair_by=None,
-    empty_candidates_template="error: no scenes with rgb+cam under: {root}",
-    root_not_dir_template="error: not a directory: {root}",
+    empty_candidates_template="error: no valid scenes found under: {root}",
 )
 
 

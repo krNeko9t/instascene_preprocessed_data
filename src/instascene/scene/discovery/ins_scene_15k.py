@@ -1,14 +1,16 @@
-"""Discover valid scene directories under InsScene-15K processed extracts.
-
-Each function is layout-only: ``Path`` in, list of :class:`scene_path_record.ScenePathRecord` out.
-No CLI or JSON.
-"""
+"""Discover valid scene directories under InsScene-15K processed extracts."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from scene_path_record import ScenePathRecord
+from instascene.scene.models import ScenePathRecord
+
+__all__ = [
+    "discover_infinigen_extracted",
+    "discover_re10k_extracted",
+    "discover_scannetpp_v2_extracted",
+]
 
 
 def discover_infinigen_extracted(dataset_root: Path) -> list[ScenePathRecord]:

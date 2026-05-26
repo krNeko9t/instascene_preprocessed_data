@@ -10,11 +10,11 @@ from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
-from config import PipelineConfig
-from data_loader import load_scene
-from image_preparer import ImageBatch, prepare_image_batches
-from view_selector import select_views_for_object
-from vlm_client import VLMClient
+from instascene.vlm.config import PipelineConfig
+from instascene.scene.loaders.scene import load_scene
+from instascene.vlm.preparer import ImageBatch, prepare_image_batches
+from instascene.vlm.selector import select_views_for_object
+from instascene.vlm.client import VLMClient
 
 
 @dataclass(slots=True)
@@ -266,26 +266,6 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
     return output_json
 
 
-def list_scenes(data_root: Path, dataset: str) -> List[str]:
-    dataset_dir = data_root / dataset
-    if not dataset_dir.exists():
-        raise FileNotFoundError(f"Dataset does not exist: {dataset_dir}")
-    scenes = [p.name for p in sorted(dataset_dir.iterdir()) if p.is_dir()]
-    return scenes
+from instascene.scene.discovery.local import list_datasets, list_scenes  # noqa: E402
 
-
-def list_datasets(data_root: Path) -> List[str]:
-    datasets: List[str] = []
-    for ds_dir in sorted(data_root.iterdir()):
-        if not ds_dir.is_dir() or ds_dir.name.startswith("."):
-            continue
-        has_scene = False
-        for scene_dir in ds_dir.iterdir():
-            if not scene_dir.is_dir():
-                continue
-            if (scene_dir / "images").exists() and (scene_dir / "sam").exists():
-                has_scene = True
-                break
-        if has_scene:
-            datasets.append(ds_dir.name)
-    return datasets
+__all__ = ["process_scene", "list_datasets", "list_scenes"]

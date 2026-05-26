@@ -1,0 +1,19 @@
+[project]
+name = "instascene"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "openai",
+  "numpy",
+  "opencv-python",
+  "Pillow",
+  "tqdm",
+  "pycocotools",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

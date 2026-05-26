@@ -6,9 +6,13 @@ from typing import Sequence, Tuple
 
 import numpy as np
 
-from data_loader import _load_mask, _load_npy_id_map, build_views_from_sam2_json
-from infinigen_manifest import ResolvedScenePaths
-from view_pairing import IdMapSource, PairingStrategy, build_image_index, list_mask_paths, pair_image_and_masks
+from instascene.manifest.models import ResolvedScenePaths
+from instascene.scene.loaders.masks import load_mask, load_npy_id_map
+from instascene.scene.loaders.scene import build_views_from_sam2_json
+from instascene.scene.pairing import build_image_index, list_mask_paths, pair_image_and_masks
+from instascene.types import IdMapSource, PairingStrategy
+
+__all__ = ["ViewObjectStats", "summarize_manifest_scene"]
 
 
 @dataclass(slots=True)
@@ -29,9 +33,9 @@ def summarize_from_paired_masks(
     object_ids: set[int] = set()
     for _, _, mask_path in pairs:
         if id_map_source == "npy":
-            mask = _load_npy_id_map(mask_path)
+            mask = load_npy_id_map(mask_path)
         elif id_map_source == "png":
-            mask = _load_mask(mask_path)
+            mask = load_mask(mask_path)
         else:
             raise ValueError(f"id_map_source {id_map_source!r} requires id_map_json, not id_map_dir")
         for v in np.unique(mask):
@@ -42,7 +46,7 @@ def summarize_from_paired_masks(
 
 
 def summarize_from_sam2_json(scene_key: str, image_dir: Path, auto_masks_json: Path) -> ViewObjectStats:
-    """Same decode + pairing as :func:`data_loader.build_views_from_sam2_json`; union distinct ids ≥ 0."""
+    """Same decode + pairing as build_views_from_sam2_json; union distinct ids >= 0."""
     _, views = build_views_from_sam2_json(image_dir, auto_masks_json)
     object_ids: set[int] = set()
     for v in views:

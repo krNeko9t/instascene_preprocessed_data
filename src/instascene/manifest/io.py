@@ -1,52 +1,17 @@
-"""Scene path manifest: JSON with ``dataset_root`` and explicit per-scene paths.
-
-Each dataset-specific ``sample_*`` script knows its on-disk layout and writes this shape.
-Optional ``id_map_dir`` or ``id_map_json`` per scene (e.g. RE10k may only have ``id_map_json`` for SAM2 ``auto_masks.json``).
-"""
+"""Scene path manifest IO: load, resolve, and validate JSON manifests."""
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
 
+from instascene.manifest.models import (
+    ResolvedScenePaths,
+    ScenePathsManifest,
+    ScenePathsManifestEntry,
+)
 
-@dataclass(slots=True, frozen=True)
-class ScenePathsManifestEntry:
-    """One element of the manifest ``scenes[]`` array."""
-
-    partition: str
-    scene_name: str
-    scene_root: str
-    image_dir: str
-    id_map_dir: str | None
-    id_map_json: str | None = None
-
-
-@dataclass(slots=True, frozen=True)
-class ScenePathsManifest:
-    """Top-level manifest: ``dataset_root`` plus a list of scene path bundles."""
-
-    dataset_root: Path
-    scenes: list[ScenePathsManifestEntry]
-    metadata: Mapping[str, Any]
-
-
-@dataclass(slots=True, frozen=True)
-class ResolvedScenePaths:
-    """Absolute paths for one scene, ready for pairing / IO."""
-
-    partition: str
-    scene_name: str
-    scene_root: Path
-    image_dir: Path
-    id_map_dir: Path | None
-    id_map_json: Path | None = None
-
-    @property
-    def scene_key(self) -> str:
-        return f"{self.partition}/{self.scene_name}"
+__all__ = ["load_scene_paths_manifest", "resolve_scene_paths"]
 
 
 def _resolve_path(raw: str, dataset_root: Path) -> Path:

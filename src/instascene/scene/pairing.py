@@ -1,19 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Literal, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
-SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"}
-
-IdMapSource = Literal["npy", "png", "sam2_json"]
-
-# processed_infinigen_extracted: Image_0_0_0001_0.png <-> ObjectSegmentation_0_0_0001_0.png
-PairingStrategy = Literal["stem", "infinigen"]
+from instascene.types import IdMapSource, PairingStrategy, SUPPORTED_IMAGE_SUFFIXES
 
 __all__ = [
     "SUPPORTED_IMAGE_SUFFIXES",
-    "IdMapSource",
-    "PairingStrategy",
     "build_image_index",
     "list_mask_paths",
     "pair_image_and_masks",
@@ -57,11 +50,7 @@ def pair_image_and_masks(
     *,
     strategy: PairingStrategy = "stem",
 ) -> List[Tuple[str, Path, Path]]:
-    """Pair each mask file to an image; view_name is the image stem.
-
-    stem: mask stem must equal image stem (classic data_root/dataset/scene/images).
-    infinigen: strip Image_ / ObjectSegmentation_ prefixes then match (processed_infinigen_extracted frames).
-    """
+    """Pair each mask file to an image; view_name is the image stem."""
     if strategy == "stem":
         image_index = build_image_index(image_dir)
         pairs: List[Tuple[str, Path, Path]] = []

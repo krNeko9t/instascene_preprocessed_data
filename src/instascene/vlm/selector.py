@@ -5,8 +5,10 @@ from typing import List, Tuple
 
 import numpy as np
 
-from config import PipelineConfig
-from data_loader import SceneData, ViewRecord
+from instascene.scene.models import SceneData, ViewRecord
+from instascene.vlm.config import PipelineConfig
+
+__all__ = ["ViewInfo", "select_views_for_object"]
 
 
 @dataclass(slots=True)
@@ -47,7 +49,6 @@ def _build_view_info(record: ViewRecord, obj_id: int) -> ViewInfo | None:
     bbox_area_ratio = float(bbox_area / max(image_area, 1))
     pixel_ratio = float(pixel_count / max(bbox_area, 1))
 
-    # Favor large, compact observations.
     quality_score = (pixel_count / max(image_area, 1)) * 0.7 + pixel_ratio * 0.3
     return ViewInfo(
         view_name=record.view_name,

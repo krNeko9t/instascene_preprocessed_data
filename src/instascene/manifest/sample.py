@@ -9,8 +9,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Sequence
 
-from ins_scene_15k_roots import path_for_manifest_json
-from scene_path_record import ScenePathRecord
+from instascene.manifest.roots import path_for_manifest_json
+from instascene.scene.models import ScenePathRecord
+
+__all__ = [
+    "SampleJobConfig",
+    "build_sample_argparser",
+    "run_sample_job",
+]
 
 
 @dataclass(frozen=True, slots=True)

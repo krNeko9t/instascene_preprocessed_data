@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -8,8 +7,11 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from sam2_auto_masks import load_auto_masks_document, pair_sorted_rgb_with_masklet
-from view_pairing import SUPPORTED_IMAGE_SUFFIXES, list_mask_paths, pair_image_and_masks
+from instascene.scene.loaders.masks import load_mask, load_npy_id_map
+from instascene.scene.loaders.sam2 import load_auto_masks_document, pair_sorted_rgb_with_masklet
+from instascene.scene.models import SceneData, ViewRecord
+from instascene.scene.pairing import list_mask_paths, pair_image_and_masks
+from instascene.types import SUPPORTED_IMAGE_SUFFIXES
 
 __all__ = [
     "SUPPORTED_IMAGE_SUFFIXES",
@@ -19,44 +21,7 @@ __all__ = [
     "load_scene",
     "load_scene_from_npy",
     "load_scene_from_png",
-    "_load_mask",
-    "_load_npy_id_map",
 ]
-
-
-@dataclass(slots=True)
-class ViewRecord:
-    view_name: str
-    image_path: Path
-    mask_path: Path
-    mask: np.ndarray
-    frame_index: int | None = None
-
-
-@dataclass(slots=True)
-class SceneData:
-    dataset: str
-    scene: str
-    scene_root: Path
-    image_dir: Path
-    mask_dir: Path
-    views: List[ViewRecord]
-    object_ids: List[int]
-    object_to_views: Dict[int, List[ViewRecord]]
-
-
-def _load_mask(mask_path: Path) -> np.ndarray:
-    with Image.open(mask_path) as img:
-        gray = img.convert("L")
-        arr = np.array(gray, dtype=np.uint8)
-    return arr
-
-
-def _load_npy_id_map(id_map_path: Path) -> np.ndarray:
-    arr = np.load(id_map_path)
-    if arr.ndim != 2:
-        raise ValueError(f"ID map should be 2D, got shape {arr.shape} from {id_map_path}")
-    return arr
 
 
 def _resize_mask_to_image(mask: np.ndarray, image_path: Path) -> np.ndarray:
@@ -105,11 +70,7 @@ def build_views_from_sam2_json(
     masklet = doc["masklet"]
     if not isinstance(masklet, list):
         raise TypeError(f"masklet must be a list in {auto_masks_json}")
-    paired = pair_sorted_rgb_with_masklet(
-        image_dir,
-        masklet,
-        supported_suffixes=SUPPORTED_IMAGE_SUFFIXES,
-    )
+    paired = pair_sorted_rgb_with_masklet(image_dir, masklet)
     mask_dir = auto_masks_json.parent
     views: List[ViewRecord] = []
     for view_name, image_path, frame_index, id_map in paired:
@@ -155,7 +116,7 @@ def load_scene(
         pairs = pair_image_and_masks(image_dir, map_files, strategy="stem")
         views = []
         for view_name, image_path, map_path in pairs:
-            mask = _load_npy_id_map(map_path)
+            mask = load_npy_id_map(map_path)
             mask = _resize_mask_to_image(mask, image_path)
             views.append(
                 ViewRecord(
@@ -171,7 +132,7 @@ def load_scene(
         pairs = pair_image_and_masks(image_dir, map_files, strategy="stem")
         views = []
         for view_name, image_path, map_path in pairs:
-            mask = _load_mask(map_path)
+            mask = load_mask(map_path)
             mask = _resize_mask_to_image(mask, image_path)
             views.append(
                 ViewRecord(
