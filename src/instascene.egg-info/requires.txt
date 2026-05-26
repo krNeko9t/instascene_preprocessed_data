@@ -1,6 +1,0 @@
-openai
-numpy
-opencv-python
-Pillow
-tqdm
-pycocotools

@@ -1,2 +1,6 @@
-# Dependencies are declared in pyproject.toml. Install with:
-#   pip install -e .
+openai
+numpy
+opencv-python
+Pillow
+tqdm
+pycocotools
