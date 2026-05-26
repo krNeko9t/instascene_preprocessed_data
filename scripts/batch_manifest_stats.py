@@ -25,14 +25,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Count views and distinct object ids per scene from a scene-path manifest "
-            "(from sample_infinigen_scenes, sample_re10k_scenes, or sample_scannetpp_v2_scenes)."
+            "(from sample_scenes.py --dataset infinigen|re10k|scannetpp_v2)."
         ),
     )
     parser.add_argument(
         "--manifest",
         type=str,
         required=True,
-        help="Path to manifest JSON (from sample_infinigen_scenes / sample_re10k_scenes / sample_scannetpp_v2_scenes)",
+        help="Path to manifest JSON (from sample_scenes.py --dataset infinigen|re10k|scannetpp_v2)",
     )
     parser.add_argument(
         "--id-map-source",

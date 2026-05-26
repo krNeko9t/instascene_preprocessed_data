@@ -13,6 +13,11 @@ from instascene.manifest.roots import (
     path_for_manifest_json,
 )
 from instascene.manifest.sample import SampleJobConfig, run_sample_job
+from instascene.manifest.sample_registry import (
+    SAMPLE_JOB_CONFIGS,
+    SampleDatasetId,
+    get_sample_job_config,
+)
 
 __all__ = [
     "INFINIGEN_ROOT",
@@ -20,10 +25,13 @@ __all__ = [
     "RE10K_ROOT",
     "SCANNETPPV2_ROOT",
     "ResolvedScenePaths",
+    "SAMPLE_JOB_CONFIGS",
+    "SampleDatasetId",
     "SampleJobConfig",
     "ScenePathRecord",
     "ScenePathsManifest",
     "ScenePathsManifestEntry",
+    "get_sample_job_config",
     "load_scene_paths_manifest",
     "path_for_manifest_json",
     "resolve_scene_paths",
