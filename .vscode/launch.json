@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "run",
+            "name": "vlm_gen_scene_desc",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/run.py",
+            "program": "${workspaceFolder}/scripts/vlm_gen_scene_desc.py.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": [
