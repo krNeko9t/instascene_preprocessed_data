@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from instascene.types import normalize_overlay_styles
 from instascene.vlm.config import (
     DEFAULT_PROMPT_TEMPLATE,
     ObjectFilterConfig,
@@ -21,16 +22,11 @@ from instascene.vlm.pipeline import list_datasets, list_scenes, process_scene
 
 
 def _parse_overlay_style_arg(value: str) -> str:
-    allowed = {"contour", "bbox", "semitransparent", "all"}
-    tokens = [token.strip() for token in value.split(",") if token.strip()]
-    if not tokens:
-        raise argparse.ArgumentTypeError("overlay-style cannot be empty")
-    invalid = sorted({token for token in tokens if token not in allowed})
-    if invalid:
-        raise argparse.ArgumentTypeError(
-            f"Invalid overlay style(s): {', '.join(invalid)}; allowed: contour,bbox,semitransparent,all"
-        )
-    return ",".join(tokens)
+    try:
+        normalize_overlay_styles(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    return ",".join(token.strip() for token in value.split(",") if token.strip())
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

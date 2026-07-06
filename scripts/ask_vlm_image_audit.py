@@ -8,7 +8,8 @@ import os
 import sys
 from pathlib import Path
 
-from instascene.vlm.client import DEFAULT_AUDIT_PROMPT, audit_images, encode_image_path_to_jpeg_b64
+from instascene.imaging import encode_image_path_to_jpeg_b64
+from instascene.vlm.client import DEFAULT_AUDIT_PROMPT, audit_images
 
 
 def main() -> int:

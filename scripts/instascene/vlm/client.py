@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import base64
-import io
 from pathlib import Path
 from typing import Sequence
 
-import cv2
-import numpy as np
 from openai import AsyncOpenAI, OpenAI
-from PIL import Image
 
+from instascene.imaging import encode_image_path_to_jpeg_b64
 from instascene.vlm.config import PipelineConfig
 from instascene.vlm.preparer import PreparedImage
 
@@ -33,7 +29,6 @@ __all__ = [
     "VLMClient",
     "audit_images",
     "build_vlm_messages",
-    "encode_image_path_to_jpeg_b64",
     "extract_text",
 ]
 
@@ -62,30 +57,6 @@ def build_vlm_messages(prompt: str, jpeg_b64_list: Sequence[str]) -> list[dict]:
             }
         )
     return [{"role": "user", "content": content}]
-
-
-def _read_rgb(path: Path) -> np.ndarray:
-    bgr = cv2.imread(str(path), cv2.IMREAD_COLOR)
-    if bgr is None:
-        raise FileNotFoundError(f"Failed to read image: {path}")
-    return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-
-
-def encode_rgb_to_jpeg_b64(rgb: np.ndarray, quality: int = 90) -> str:
-    q = max(1, min(100, quality))
-    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-    ok, buf = cv2.imencode(".jpg", bgr, [int(cv2.IMWRITE_JPEG_QUALITY), q])
-    if not ok:
-        im = Image.fromarray(rgb.astype(np.uint8), mode="RGB")
-        bio = io.BytesIO()
-        im.save(bio, format="JPEG", quality=q)
-        return base64.b64encode(bio.getvalue()).decode("ascii")
-    return base64.b64encode(buf.tobytes()).decode("ascii")
-
-
-def encode_image_path_to_jpeg_b64(path: Path, *, quality: int = 90) -> str:
-    rgb = _read_rgb(path)
-    return encode_rgb_to_jpeg_b64(rgb, quality=quality)
 
 
 class VLMClient:

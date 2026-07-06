@@ -33,14 +33,16 @@ scripts/
 ├── ask_vlm_image_audit.py       [ 83行] 入口：VLM 多图可见性探针
 │
 └── instascene/
-    ├── types.py                 [ 16行] Literal 类型：IdMapSource / PairingStrategy；支持的图片后缀
+    ├── types.py                 [ 36行] Literal 类型；支持的图片后缀；overlay style 校验（唯一实现）
+    ├── imaging.py               [ 40行] 共享图像 IO：读图转 RGB、JPEG/base64 编码（唯一实现）
     │
     ├── vlm/                     ★ 标注 pipeline 核心
     │   ├── pipeline.py          [271行] process_scene 主编排：并发、断点续传、落盘、debug dump
     │   ├── config.py            [153行] PipelineConfig 及 5 个子配置；默认 prompt/compose spec
+    │   ├── compose.py           [187行] compose spec 类型化模型（ComposeSpec 等）+ 解析/校验
     │   ├── selector.py          [ 87行] 视角质量筛选：阈值过滤 + quality_score 排序取 top-K
-    │   ├── preparer.py          [369行] 面板渲染（origin/mask/highlight/overlay/crop）+ 拼图合成 + base64
-    │   └── client.py            [152行] AsyncOpenAI 封装（重试/限流）；audit_images 同步探针
+    │   ├── preparer.py          [241行] 面板渲染（origin/mask/highlight/overlay/crop）+ 拼图合成
+    │   └── client.py            [123行] AsyncOpenAI 封装（重试/限流）；audit_images 同步探针
     │
     ├── scene/                   场景数据加载
     │   ├── models.py            [ 42行] ViewRecord / SceneData / ScenePathRecord
@@ -71,7 +73,7 @@ scripts/
          ──▶ instascene.manifest ──▶ instascene.scene.{models,discovery}
          ──▶ instascene.stats ──▶ instascene.{manifest,scene}
 
-vlm 内部:  pipeline ─▶ {config, selector, preparer, client} ─▶ config
+vlm 内部:  pipeline ─▶ {config, selector, preparer, client}；preparer ─▶ {compose, imaging}
 scene 内部: loaders/scene ─▶ {loaders/masks, loaders/sam2, pairing, models}
 ```
 
@@ -94,7 +96,7 @@ scene 内部: loaders/scene ─▶ {loaders/masks, loaders/sam2, pairing, models
 |---|---|
 | 加/改 CLI 参数 | `vlm_gen_scene_desc.py` + `vlm/config.py` |
 | 标注质量差、视角选得不对 | `vlm/selector.py` 阈值与 quality_score |
-| 换发给 VLM 的图片形式 | `configs/*.json` 写新 spec；新面板变体加在 `vlm/preparer.py:_render_variant` |
+| 换发给 VLM 的图片形式 | `configs/*.json` 写新 spec；新面板变体：`vlm/compose.py` 的 `KNOWN_PANEL_VARIANTS` + `vlm/preparer.py:_render_variant` |
 | 换 prompt / 标注 schema | `prompts/` 新建 .prompt；枚举定义对照 `assets/` |
 | 支持新 mask 格式 | `scene/loaders/scene.py:load_scene` 加分支 |
 | 支持新的远端数据集抽样 | `scene/discovery/ins_scene_15k.py` 写 discover + `manifest/sample_registry.py` 注册 |
