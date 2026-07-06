@@ -7,3 +7,4 @@ zipnerf/
 outputs/
 debug/
 tmp/
+.vscode/
