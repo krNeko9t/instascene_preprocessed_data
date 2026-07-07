@@ -1,4 +1,4 @@
-"""Discover valid scene directories under InsScene-15K processed extracts."""
+"""Discover valid scene directories in InsScene-15K dataset layouts."""
 
 from __future__ import annotations
 
@@ -7,20 +7,20 @@ from pathlib import Path
 from instascene.scene.ref import SceneRef
 
 __all__ = [
-    "discover_infinigen_extracted",
-    "discover_re10k_extracted",
-    "discover_scannetpp_v2_extracted",
+    "discover_infinigen_scenes",
+    "discover_re10k_scenes",
+    "discover_scannetpp_v2_scenes",
 ]
 
 
-def discover_infinigen_extracted(dataset_root: Path) -> list[SceneRef]:
+def discover_infinigen_scenes(dataset_root: Path) -> list[SceneRef]:
     """``scene_* / <name> / frames/Image/camera_0`` + ``.../ObjectSegmentation/camera_0``."""
     out: list[SceneRef] = []
-    partitions = sorted(
+    scene_groups = sorted(
         p for p in dataset_root.glob("scene_*") if p.is_dir() and not p.name.startswith(".")
     )
-    for partition in partitions:
-        for child in sorted(partition.iterdir()):
+    for scene_group in scene_groups:
+        for child in sorted(scene_group.iterdir()):
             if not child.is_dir() or child.name.startswith("."):
                 continue
             frames = child / "frames"
@@ -28,12 +28,12 @@ def discover_infinigen_extracted(dataset_root: Path) -> list[SceneRef]:
             id_map_dir = frames / "ObjectSegmentation" / "camera_0"
             if not image_dir.is_dir() or not id_map_dir.is_dir():
                 continue
-            out.append(SceneRef(scene_id=f"{partition.name}/{child.name}"))
+            out.append(SceneRef(scene_id=f"{scene_group.name}/{child.name}"))
     out.sort(key=lambda e: e.scene_id)
     return out
 
 
-def discover_re10k_extracted(scenes_root: Path) -> list[SceneRef]:
+def discover_re10k_scenes(scenes_root: Path) -> list[SceneRef]:
     """One directory per scene with ``rgb/`` and ``cam/``."""
     out: list[SceneRef] = []
     for child in sorted(scenes_root.iterdir()):
@@ -48,7 +48,7 @@ def discover_re10k_extracted(scenes_root: Path) -> list[SceneRef]:
     return out
 
 
-def discover_scannetpp_v2_extracted(scenes_root: Path) -> list[SceneRef]:
+def discover_scannetpp_v2_scenes(scenes_root: Path) -> list[SceneRef]:
     """``images/`` + ``refined_ins_ids/`` per scene (jpg vs png, same stem)."""
     out: list[SceneRef] = []
     for child in sorted(scenes_root.iterdir()):

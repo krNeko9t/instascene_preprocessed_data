@@ -24,7 +24,7 @@ __all__ = ["SceneRunInput", "process_scene"]
 @dataclass(slots=True, frozen=True)
 class SceneRunInput:
     dataset_id: str
-    scene_key: str
+    scene_id: str
     resolved: ResolvedScenePaths
     id_map_source: IdMapSource
     pair_by: PairingStrategy
@@ -63,8 +63,8 @@ def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _make_instance_id(dataset_id: str, scene_key: str, object_id: int) -> str:
-    safe_scene = scene_key.replace("/", "_")
+def _make_instance_id(dataset_id: str, scene_id: str, object_id: int) -> str:
+    safe_scene = scene_id.replace("/", "_")
     return f"{dataset_id}_{safe_scene}_inst{object_id:03d}"
 
 
@@ -77,14 +77,14 @@ def _build_prompt(
     config: PipelineConfig,
     *,
     dataset_id: str,
-    scene_key: str,
+    scene_id: str,
     object_id: int,
     batch: ImageBatch,
 ) -> str:
     view_names = [img.view_name for img in batch.images]
     return config.vlm.prompt_template.format(
         dataset=dataset_id,
-        scene=scene_key,
+        scene=scene_id,
         object_id=object_id,
         n_views=len(set(view_names)),
         view_names=", ".join(sorted(set(view_names))),
@@ -168,8 +168,8 @@ async def process_scene(config: PipelineConfig, scene_input: SceneRunInput) -> P
         id_map_source=scene_input.id_map_source,
         pair_by=scene_input.pair_by,
     )
-    label = f"{scene_input.dataset_id}/{scene_input.scene_key}"
-    out_dir = config.scene_output_dir(scene_input.dataset_id, scene_input.scene_key)
+    label = f"{scene_input.dataset_id}/{scene_input.scene_id}"
+    out_dir = config.scene_output_dir(scene_input.dataset_id, scene_input.scene_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     output_json = out_dir / _model_to_filename(config.vlm.model_name)
     error_log = out_dir / "errors.log"
@@ -207,7 +207,7 @@ async def process_scene(config: PipelineConfig, scene_input: SceneRunInput) -> P
             prompt = _build_prompt(
                 config,
                 dataset_id=scene_input.dataset_id,
-                scene_key=scene_input.scene_key,
+                scene_id=scene_input.scene_id,
                 object_id=obj_id,
                 batch=batch,
             )
@@ -262,7 +262,7 @@ async def process_scene(config: PipelineConfig, scene_input: SceneRunInput) -> P
     for result in new_results:
         entry: Dict[str, Any] = {
             "id": result.id,
-            "instance_id": _make_instance_id(scene_input.dataset_id, scene_input.scene_key, result.id),
+            "instance_id": _make_instance_id(scene_input.dataset_id, scene_input.scene_id, result.id),
             "n_views": result.n_views,
             "mode": result.mode,
         }

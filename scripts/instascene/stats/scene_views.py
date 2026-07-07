@@ -13,7 +13,7 @@ __all__ = ["ViewObjectStats", "summarize_manifest_scene"]
 class ViewObjectStats:
     """Per-scene counts from the shared scene loader (non-negative ids only)."""
 
-    scene_key: str
+    scene_id: str
     n_views: int
     n_objects: int
     error: str | None = None
@@ -35,14 +35,14 @@ def summarize_manifest_scene(
             pair_by=pair_by,
         )
         return ViewObjectStats(
-            scene_key=resolved.scene_key,
+            scene_id=resolved.scene_id,
             n_views=len(scene_data.views),
             n_objects=len(scene_data.object_ids),
             error=None,
         )
     except Exception as exc:  # noqa: BLE001 — record per-scene failure without aborting the batch
         return ViewObjectStats(
-            scene_key=resolved.scene_key,
+            scene_id=resolved.scene_id,
             n_views=0,
             n_objects=0,
             error=str(exc),

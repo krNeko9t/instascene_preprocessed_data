@@ -12,10 +12,10 @@ if str(SCRIPTS) not in sys.path:
 
 from instascene.manifest.io import load_scene_selection_manifest  # noqa: E402
 from instascene.manifest.models import ResolvedScenePaths  # noqa: E402
-from instascene.manifest.resolver import resolve_local_scene, resolve_scene_ref  # noqa: E402
+from instascene.manifest.resolver import resolve_instascene_scene, resolve_scene_ref  # noqa: E402
 from instascene.manifest.sample import select_scene_subset  # noqa: E402
 from instascene.manifest.sample_registry import get_dataset_spec  # noqa: E402
-from instascene.scene.discovery.local import discover_local_extracted  # noqa: E402
+from instascene.scene.discovery.instascene import discover_instascene_scenes  # noqa: E402
 from instascene.scene.loaders.scene import load_scene_from_paths  # noqa: E402
 from instascene.scene.ref import SceneRef  # noqa: E402
 
@@ -52,24 +52,15 @@ class ManifestLoadTests(unittest.TestCase):
         self.assertEqual(spec.pair_by, "stem")
 
 
-class SceneKeyTests(unittest.TestCase):
-    def test_scene_key_is_scene_id(self) -> None:
-        resolved = ResolvedScenePaths(
-            scene_id="bench",
-            scene_root=Path("/x/bench"),
-            image_dir=Path("/x/bench/images"),
-            id_map_dir=Path("/x/bench/id_maps"),
-        )
-        self.assertEqual(resolved.scene_key, "bench")
-
-    def test_scene_key_with_partition_in_scene_id(self) -> None:
+class ResolvedScenePathsTests(unittest.TestCase):
+    def test_scene_id_can_include_nested_directory(self) -> None:
         resolved = ResolvedScenePaths(
             scene_id="scene_001/foo",
             scene_root=Path("/x/scene_001/foo"),
             image_dir=Path("/x/scene_001/foo/images"),
             id_map_dir=Path("/x/scene_001/foo/masks"),
         )
-        self.assertEqual(resolved.scene_key, "scene_001/foo")
+        self.assertEqual(resolved.scene_id, "scene_001/foo")
 
 
 class SamplingTests(unittest.TestCase):
@@ -81,14 +72,14 @@ class SamplingTests(unittest.TestCase):
         self.assertEqual(len(first), 3)
 
 
-class LocalDiscoverAndLoadTests(unittest.TestCase):
+class InstasceneDiscoverAndLoadTests(unittest.TestCase):
     def test_discover_and_load_3dovs_bench(self) -> None:
         root = SCRIPTS.parent / "3dovs"
         if not root.is_dir():
-            self.skipTest("local 3dovs data not available")
-        refs = discover_local_extracted(root)
+            self.skipTest("3dovs data not available")
+        refs = discover_instascene_scenes(root)
         self.assertTrue(any(r.scene_id == "bench" for r in refs))
-        resolved = resolve_local_scene(root, "bench")
+        resolved = resolve_instascene_scene(root, "bench")
         scene_data = load_scene_from_paths(
             "3dovs",
             resolved,
@@ -98,10 +89,10 @@ class LocalDiscoverAndLoadTests(unittest.TestCase):
         self.assertGreater(len(scene_data.views), 0)
         self.assertGreater(len(scene_data.object_ids), 0)
 
-    def test_resolve_scene_ref_matches_local_resolver(self) -> None:
+    def test_resolve_scene_ref_matches_instascene_resolver(self) -> None:
         root = SCRIPTS.parent / "3dovs"
         if not root.is_dir():
-            self.skipTest("local 3dovs data not available")
+            self.skipTest("3dovs data not available")
         resolved = resolve_scene_ref("3dovs", "bench", root)
         self.assertEqual(resolved.scene_id, "bench")
         self.assertTrue(resolved.image_dir.is_dir())

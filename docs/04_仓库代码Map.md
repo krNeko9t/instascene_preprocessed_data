@@ -52,8 +52,8 @@ scripts/
     │   │   ├── masks.py         [ 22行] 单文件读取：png灰度 / npy 2D
     │   │   └── sam2.py          [ 82行] auto_masks.json RLE 解码（pycocotools）→ id map
     │   └── discovery/
-    │       ├── local.py         [ 31行] 本地数据根 dataset/scene 发现（--dataset all 用）
-    │       └── ins_scene_15k.py [ 90行] 远端三 extract 的目录约定扫描
+    │       ├── instascene.py    [ 28行] images + id_maps/sam/mask 布局发现
+    │       └── ins_scene_15k.py [ 64行] InsScene-15K 三类目录布局扫描
     │
     ├── manifest/                场景抽样清单（辅链）
     │   ├── sample.py            [224行] 通用抽样 CLI 骨架 + manifest 写出
@@ -83,8 +83,8 @@ scene 内部: loaders/scene ─▶ {loaders/masks, loaders/sam2, pairing, models
 
 | 文件 | 产自 | 结构要点 |
 |---|---|---|
-| manifest JSON | `sample_scenes.py` | `{dataset_root, pair_by?, scenes:[{partition, scene_name, scene_root, image_dir, id_map_dir?/id_map_json?}], seed, ...}` |
-| 统计 JSON | `batch_manifest_stats.py` | `{scenes:[{scene_key, n_views, n_objects, error?}], totals:{...}}` |
+| manifest JSON | `sample_scenes.py` | `{dataset_roots, scenes:[{dataset_id, scene_id}], sampling, ...}` |
+| 统计 JSON | `batch_manifest_stats.py` | `{scenes:[{dataset_id, scene_id, n_views, n_objects, error?}], totals:{...}}` |
 | 标注结果 JSON | `vlm_gen_scene_desc.py` | 数组，每条 `{id, instance_id, n_views, mode, response(解析后的dict或原文), parse_failed?}` |
 | `debug_inputs/object_XXX/` | 同上 | `batch_00_prompt.txt` + `batch_00_meta.json` + 实际发送的 jpg |
 | `auto_masks.json` | SAM2（外部） | `{masklet: [[RLE,...] 每帧], ...}`，RLE 序号 k → 实例 id k+1 |

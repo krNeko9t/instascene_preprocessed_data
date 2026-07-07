@@ -115,7 +115,7 @@ def _iter_scene_inputs(manifest_path: Path) -> list[SceneRunInput]:
         inputs.append(
             SceneRunInput(
                 dataset_id=entry.dataset_id,
-                scene_key=resolved.scene_key,
+                scene_id=resolved.scene_id,
                 resolved=resolved,
                 id_map_source=spec.id_map_source,
                 pair_by=spec.pair_by,
@@ -186,7 +186,7 @@ async def main_async() -> None:
 
     for scene_input in scene_inputs:
         output_path = await process_scene(cfg, scene_input)
-        print(f"[done] {scene_input.dataset_id}/{scene_input.scene_key} -> {output_path}")
+        print(f"[done] {scene_input.dataset_id}/{scene_input.scene_id} -> {output_path}")
 
 
 def main() -> None:

@@ -6,20 +6,20 @@ from pathlib import Path
 from typing import Callable, Literal, cast
 
 from instascene.manifest.roots import (
+    DEFAULT_3DOVS_ROOT,
+    DEFAULT_LERF_ROOT,
+    DEFAULT_ZIPNERF_ROOT,
     INFINIGEN_ROOT,
-    LOCAL_3DOVS_ROOT,
-    LOCAL_LERF_ROOT,
-    LOCAL_ZIPNERF_ROOT,
     RE10K_ROOT,
     SCANNETPPV2_ROOT,
 )
 from instascene.manifest.sample import SampleJobConfig
 from instascene.scene.discovery.ins_scene_15k import (
-    discover_infinigen_extracted,
-    discover_re10k_extracted,
-    discover_scannetpp_v2_extracted,
+    discover_infinigen_scenes,
+    discover_re10k_scenes,
+    discover_scannetpp_v2_scenes,
 )
-from instascene.scene.discovery.local import discover_local_extracted
+from instascene.scene.discovery.instascene import discover_instascene_scenes
 from instascene.scene.ref import SceneRef
 from instascene.types import IdMapSource, PairingStrategy
 
@@ -48,58 +48,55 @@ class DatasetSpec:
 DATASET_SPECS: dict[SampleDatasetId, DatasetSpec] = {
     "3dovs": DatasetSpec(
         dataset_id="3dovs",
-        description="Local 3DOVS scenes (images/ + id_maps/ or sam/mask/).",
-        default_root=LOCAL_3DOVS_ROOT,
-        discover=discover_local_extracted,
+        description="3DOVS scenes (images/ + id_maps/ or sam/mask/).",
+        default_root=DEFAULT_3DOVS_ROOT,
+        discover=discover_instascene_scenes,
         id_map_source="npy",
         pair_by="stem",
     ),
     "lerf": DatasetSpec(
         dataset_id="lerf",
-        description="Local LERF scenes (images/ + sam/mask/).",
-        default_root=LOCAL_LERF_ROOT,
-        discover=discover_local_extracted,
+        description="LERF scenes (images/ + sam/mask/).",
+        default_root=DEFAULT_LERF_ROOT,
+        discover=discover_instascene_scenes,
         id_map_source="png",
         pair_by="stem",
     ),
     "zipnerf": DatasetSpec(
         dataset_id="zipnerf",
-        description="Local Zip-NeRF scenes (images/ + sam/mask/).",
-        default_root=LOCAL_ZIPNERF_ROOT,
-        discover=discover_local_extracted,
+        description="Zip-NeRF scenes (images/ + sam/mask/).",
+        default_root=DEFAULT_ZIPNERF_ROOT,
+        discover=discover_instascene_scenes,
         id_map_source="png",
         pair_by="stem",
     ),
     "infinigen": DatasetSpec(
         dataset_id="infinigen",
         description=(
-            "Sample scenes under InsScene-15K/processed_infinigen_extracted "
-            "and write a scene selection lockfile."
+            "Sample Infinigen scenes from InsScene-15K and write a scene selection lockfile."
         ),
         default_root=INFINIGEN_ROOT,
-        discover=discover_infinigen_extracted,
+        discover=discover_infinigen_scenes,
         id_map_source="png",
         pair_by="infinigen",
     ),
     "re10k": DatasetSpec(
         dataset_id="re10k",
         description=(
-            "Sample scenes under InsScene-15K/processed_re10k_extracted/processed_re10k "
-            "and write a scene selection lockfile."
+            "Sample RE10K scenes from InsScene-15K and write a scene selection lockfile."
         ),
         default_root=RE10K_ROOT,
-        discover=discover_re10k_extracted,
+        discover=discover_re10k_scenes,
         id_map_source="sam2_json",
         pair_by="stem",
     ),
     "scannetpp_v2": DatasetSpec(
         dataset_id="scannetpp_v2",
         description=(
-            "Sample scenes under InsScene-15K/processed_scannetpp_v2_extracted/processed_scannetpp_v2 "
-            "and write a scene selection lockfile."
+            "Sample ScanNet++ v2 scenes from InsScene-15K and write a scene selection lockfile."
         ),
         default_root=SCANNETPPV2_ROOT,
-        discover=discover_scannetpp_v2_extracted,
+        discover=discover_scannetpp_v2_scenes,
         id_map_source="png",
         pair_by="stem",
     ),

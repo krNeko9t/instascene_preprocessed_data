@@ -18,7 +18,7 @@ MANIFEST_KIND = "scene_selection"
 
 @dataclass(slots=True, frozen=True)
 class SceneSelectionEntry:
-    """One selected scene: dataset identity plus stable scene key."""
+    """One selected scene: dataset identity plus stable scene id."""
 
     dataset_id: str
     scene_id: str
@@ -55,7 +55,3 @@ class ResolvedScenePaths:
     image_dir: Path
     id_map_dir: Path | None
     id_map_json: Path | None = None
-
-    @property
-    def scene_key(self) -> str:
-        return self.scene_id

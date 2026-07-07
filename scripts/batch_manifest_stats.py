@@ -92,8 +92,7 @@ def main() -> int:
         )
         row: dict[str, Any] = {
             "dataset_id": entry.dataset_id,
-            "scene_id": entry.scene_id,
-            "scene_key": stats.scene_key,
+            "scene_id": stats.scene_id,
             "id_map_source": id_map_source,
             "pair_by": pairing,
             "n_views": stats.n_views,
@@ -108,7 +107,7 @@ def main() -> int:
             n_errors += 1
             scene_rows.append(row)
             if args.fail_fast:
-                print(f"fail-fast: {stats.scene_key}: {stats.error}", file=sys.stderr)
+                print(f"fail-fast: {stats.scene_id}: {stats.error}", file=sys.stderr)
                 break
             continue
         scene_rows.append(row)

@@ -90,7 +90,7 @@ def load_scene_from_paths(
     if resolved.id_map_json is not None:
         if id_map_source != "sam2_json":
             raise ValueError(
-                f"Manifest scene {resolved.scene_key!r} has id_map_json but id_map_source={id_map_source!r}"
+                f"Manifest scene {resolved.scene_id!r} has id_map_json but id_map_source={id_map_source!r}"
             )
         map_dir, views = build_views_from_sam2_json(image_dir, resolved.id_map_json)
     elif resolved.id_map_dir is not None:
@@ -99,7 +99,7 @@ def load_scene_from_paths(
             raise FileNotFoundError(f"ID map directory does not exist: {map_dir}")
         if id_map_source == "sam2_json":
             raise ValueError(
-                f"Manifest scene {resolved.scene_key!r} has id_map_dir but id_map_source=sam2_json"
+                f"Manifest scene {resolved.scene_id!r} has id_map_dir but id_map_source=sam2_json"
             )
         map_files = list_mask_paths(map_dir, id_map_source)
         pairs = pair_image_and_masks(image_dir, map_files, strategy=pair_by)
@@ -117,15 +117,15 @@ def load_scene_from_paths(
                 )
             )
     else:
-        raise ValueError(f"Manifest scene {resolved.scene_key!r} has neither id_map_dir nor id_map_json")
+        raise ValueError(f"Manifest scene {resolved.scene_id!r} has neither id_map_dir nor id_map_json")
 
     if not views:
-        raise RuntimeError(f"No valid image-mask pairs found for scene: {resolved.scene_key}")
+        raise RuntimeError(f"No valid image-mask pairs found for scene: {resolved.scene_id}")
 
     object_ids, object_to_views = _build_object_index(views)
     return SceneData(
         dataset=dataset_id,
-        scene=resolved.scene_key,
+        scene=resolved.scene_id,
         scene_root=resolved.scene_root,
         image_dir=image_dir,
         mask_dir=map_dir,

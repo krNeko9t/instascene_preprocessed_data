@@ -1,13 +1,13 @@
 from instascene.scene.discovery.ins_scene_15k import (
-    discover_infinigen_extracted,
-    discover_re10k_extracted,
-    discover_scannetpp_v2_extracted,
+    discover_infinigen_scenes,
+    discover_re10k_scenes,
+    discover_scannetpp_v2_scenes,
 )
-from instascene.scene.discovery.local import discover_local_extracted
+from instascene.scene.discovery.instascene import discover_instascene_scenes
 
 __all__ = [
-    "discover_infinigen_extracted",
-    "discover_local_extracted",
-    "discover_re10k_extracted",
-    "discover_scannetpp_v2_extracted",
+    "discover_infinigen_scenes",
+    "discover_instascene_scenes",
+    "discover_re10k_scenes",
+    "discover_scannetpp_v2_scenes",
 ]

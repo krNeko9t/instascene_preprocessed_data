@@ -7,15 +7,15 @@ from pathlib import Path
 from instascene.manifest.models import ResolvedScenePaths
 
 __all__ = [
+    "resolve_instascene_scene",
     "resolve_infinigen_scene",
-    "resolve_local_scene",
     "resolve_re10k_scene",
     "resolve_scannetpp_v2_scene",
     "resolve_scene_ref",
 ]
 
 
-def resolve_local_scene(dataset_root: Path, scene_id: str) -> ResolvedScenePaths:
+def resolve_instascene_scene(dataset_root: Path, scene_id: str) -> ResolvedScenePaths:
     scene_root = (dataset_root / scene_id).resolve()
     image_dir = scene_root / "images"
     id_maps = scene_root / "id_maps"
@@ -37,9 +37,9 @@ def resolve_local_scene(dataset_root: Path, scene_id: str) -> ResolvedScenePaths
 
 def resolve_infinigen_scene(dataset_root: Path, scene_id: str) -> ResolvedScenePaths:
     if "/" not in scene_id:
-        raise ValueError(f"infinigen scene_id must be '<partition>/<name>', got {scene_id!r}")
-    partition, scene_name = scene_id.split("/", 1)
-    scene_root = (dataset_root / partition / scene_name).resolve()
+        raise ValueError(f"infinigen scene_id must be '<scene_group>/<name>', got {scene_id!r}")
+    scene_group, scene_name = scene_id.split("/", 1)
+    scene_root = (dataset_root / scene_group / scene_name).resolve()
     frames = scene_root / "frames"
     return ResolvedScenePaths(
         scene_id=scene_id,
@@ -75,9 +75,9 @@ def resolve_scannetpp_v2_scene(dataset_root: Path, scene_id: str) -> ResolvedSce
 
 
 _RESOLVERS = {
-    "3dovs": resolve_local_scene,
-    "lerf": resolve_local_scene,
-    "zipnerf": resolve_local_scene,
+    "3dovs": resolve_instascene_scene,
+    "lerf": resolve_instascene_scene,
+    "zipnerf": resolve_instascene_scene,
     "infinigen": resolve_infinigen_scene,
     "re10k": resolve_re10k_scene,
     "scannetpp_v2": resolve_scannetpp_v2_scene,

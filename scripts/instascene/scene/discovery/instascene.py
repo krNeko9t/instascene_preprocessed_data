@@ -1,4 +1,4 @@
-"""Discover scenes under the local ``<dataset>/<scene>/images + mask`` layout."""
+"""Discover scenes under the ``<dataset>/<scene>/images + mask`` layout."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from pathlib import Path
 
 from instascene.scene.ref import SceneRef
 
-__all__ = ["discover_local_extracted"]
+__all__ = ["discover_instascene_scenes"]
 
 
-def discover_local_extracted(scenes_root: Path) -> list[SceneRef]:
+def discover_instascene_scenes(scenes_root: Path) -> list[SceneRef]:
     """One directory per scene with ``images/`` and ``id_maps/`` or ``sam/mask/``."""
     out: list[SceneRef] = []
     for child in sorted(scenes_root.iterdir()):

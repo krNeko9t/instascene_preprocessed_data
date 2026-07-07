@@ -133,8 +133,8 @@ class PipelineConfig:
     vlm: VlmConfig
     run: RunControlConfig
 
-    def scene_output_dir(self, dataset_id: str, scene_key: str) -> Path:
+    def scene_output_dir(self, dataset_id: str, scene_id: str) -> Path:
         root = Path(self.run.output_dir)
         if not root.is_absolute():
             root = Path.cwd() / root
-        return root / dataset_id / scene_key
+        return root / dataset_id / scene_id

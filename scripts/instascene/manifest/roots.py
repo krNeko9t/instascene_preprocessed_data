@@ -1,4 +1,4 @@
-"""Shared roots under the InsScene-15K release tree (multiple processed extracts)."""
+"""Shared dataset root paths."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ SCANNETPPV2_ROOT = (
 )
 
 # Repo root: scripts/instascene/manifest/roots.py -> parents[3]
-LOCAL_DATA_ROOT = Path(__file__).resolve().parents[3]
-LOCAL_3DOVS_ROOT = LOCAL_DATA_ROOT / "3dovs"
-LOCAL_LERF_ROOT = LOCAL_DATA_ROOT / "lerf"
-LOCAL_ZIPNERF_ROOT = LOCAL_DATA_ROOT / "zipnerf"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_3DOVS_ROOT = REPO_ROOT / "3dovs"
+DEFAULT_LERF_ROOT = REPO_ROOT / "lerf"
+DEFAULT_ZIPNERF_ROOT = REPO_ROOT / "zipnerf"
