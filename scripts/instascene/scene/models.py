@@ -6,19 +6,7 @@ from typing import Dict, List
 
 import numpy as np
 
-__all__ = ["ViewRecord", "SceneData", "ScenePathRecord"]
-
-
-@dataclass(slots=True, frozen=True)
-class ScenePathRecord:
-    """One scene worth of absolute paths before serializing to manifest JSON."""
-
-    partition: str
-    scene_name: str
-    scene_root: Path
-    image_dir: Path
-    id_map_dir: Path | None
-    id_map_json: Path | None = None
+__all__ = ["ViewRecord", "SceneData"]
 
 
 @dataclass(slots=True)

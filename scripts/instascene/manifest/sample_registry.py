@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
-from typing import Literal, cast
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Literal, cast
 
 from instascene.manifest.roots import (
     INFINIGEN_ROOT,
@@ -18,81 +20,115 @@ from instascene.scene.discovery.ins_scene_15k import (
     discover_scannetpp_v2_extracted,
 )
 from instascene.scene.discovery.local import discover_local_extracted
+from instascene.scene.ref import SceneRef
+from instascene.types import IdMapSource, PairingStrategy
 
 __all__ = [
+    "DATASET_SPECS",
+    "DatasetSpec",
     "SAMPLE_JOB_CONFIGS",
     "SampleDatasetId",
+    "get_dataset_spec",
     "get_sample_job_config",
 ]
 
 SampleDatasetId = Literal["3dovs", "lerf", "zipnerf", "infinigen", "re10k", "scannetpp_v2"]
 
-SAMPLE_JOB_CONFIGS: dict[SampleDatasetId, SampleJobConfig] = {
-    "3dovs": SampleJobConfig(
+
+@dataclass(frozen=True, slots=True)
+class DatasetSpec:
+    dataset_id: str
+    description: str
+    default_root: Path
+    discover: Callable[[Path], list[SceneRef]]
+    id_map_source: IdMapSource
+    pair_by: PairingStrategy
+
+
+DATASET_SPECS: dict[SampleDatasetId, DatasetSpec] = {
+    "3dovs": DatasetSpec(
         dataset_id="3dovs",
         description="Local 3DOVS scenes (images/ + id_maps/ or sam/mask/).",
         default_root=LOCAL_3DOVS_ROOT,
         discover=discover_local_extracted,
         id_map_source="npy",
         pair_by="stem",
-        empty_candidates_template="error: no valid scenes found under: {root}",
     ),
-    "lerf": SampleJobConfig(
+    "lerf": DatasetSpec(
         dataset_id="lerf",
         description="Local LERF scenes (images/ + sam/mask/).",
         default_root=LOCAL_LERF_ROOT,
         discover=discover_local_extracted,
         id_map_source="png",
         pair_by="stem",
-        empty_candidates_template="error: no valid scenes found under: {root}",
     ),
-    "zipnerf": SampleJobConfig(
+    "zipnerf": DatasetSpec(
         dataset_id="zipnerf",
         description="Local Zip-NeRF scenes (images/ + sam/mask/).",
         default_root=LOCAL_ZIPNERF_ROOT,
         discover=discover_local_extracted,
         id_map_source="png",
         pair_by="stem",
-        empty_candidates_template="error: no valid scenes found under: {root}",
     ),
-    "infinigen": SampleJobConfig(
+    "infinigen": DatasetSpec(
         dataset_id="infinigen",
         description=(
             "Sample scenes under InsScene-15K/processed_infinigen_extracted "
-            "and write a scene-path manifest JSON."
+            "and write a scene selection lockfile."
         ),
         default_root=INFINIGEN_ROOT,
         discover=discover_infinigen_extracted,
         id_map_source="png",
         pair_by="infinigen",
-        empty_candidates_template="error: no valid scenes found under: {root}",
-        root_not_dir_template="error: dataset root is not a directory: {root}",
     ),
-    "re10k": SampleJobConfig(
+    "re10k": DatasetSpec(
         dataset_id="re10k",
         description=(
             "Sample scenes under InsScene-15K/processed_re10k_extracted/processed_re10k "
-            "and write a scene-path manifest JSON."
+            "and write a scene selection lockfile."
         ),
         default_root=RE10K_ROOT,
         discover=discover_re10k_extracted,
         id_map_source="sam2_json",
-        pair_by=None,
-        empty_candidates_template="error: no valid scenes found under: {root}",
+        pair_by="stem",
     ),
-    "scannetpp_v2": SampleJobConfig(
+    "scannetpp_v2": DatasetSpec(
         dataset_id="scannetpp_v2",
         description=(
             "Sample scenes under InsScene-15K/processed_scannetpp_v2_extracted/processed_scannetpp_v2 "
-            "and write a scene-path manifest JSON."
+            "and write a scene selection lockfile."
         ),
         default_root=SCANNETPPV2_ROOT,
         discover=discover_scannetpp_v2_extracted,
         id_map_source="png",
         pair_by="stem",
-        empty_candidates_template="error: no valid scenes found under: {root}",
     ),
 }
+
+SAMPLE_JOB_CONFIGS: dict[SampleDatasetId, SampleJobConfig] = {
+    dataset_id: SampleJobConfig(
+        dataset_id=spec.dataset_id,
+        description=spec.description,
+        default_root=spec.default_root,
+        discover=spec.discover,
+        id_map_source=spec.id_map_source,
+        pair_by=spec.pair_by,
+        empty_candidates_template="error: no valid scenes found under: {root}",
+        root_not_dir_template=(
+            "error: dataset root is not a directory: {root}"
+            if dataset_id == "infinigen"
+            else "error: not a directory: {root}"
+        ),
+    )
+    for dataset_id, spec in DATASET_SPECS.items()
+}
+
+
+def get_dataset_spec(dataset_id: str) -> DatasetSpec:
+    if dataset_id not in DATASET_SPECS:
+        allowed = ", ".join(sorted(DATASET_SPECS))
+        raise ValueError(f"unknown dataset_id {dataset_id!r}; choose one of: {allowed}")
+    return DATASET_SPECS[cast(SampleDatasetId, dataset_id)]
 
 
 def get_sample_job_config(dataset: str) -> SampleJobConfig:

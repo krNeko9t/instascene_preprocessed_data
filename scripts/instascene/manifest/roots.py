@@ -19,12 +19,3 @@ LOCAL_DATA_ROOT = Path(__file__).resolve().parents[3]
 LOCAL_3DOVS_ROOT = LOCAL_DATA_ROOT / "3dovs"
 LOCAL_LERF_ROOT = LOCAL_DATA_ROOT / "lerf"
 LOCAL_ZIPNERF_ROOT = LOCAL_DATA_ROOT / "zipnerf"
-
-
-def path_for_manifest_json(path: Path, *, relative_to: Path | None) -> str:
-    if relative_to is None:
-        return str(path)
-    try:
-        return str(path.relative_to(relative_to.resolve()))
-    except ValueError:
-        return str(path)

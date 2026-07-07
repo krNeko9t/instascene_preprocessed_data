@@ -7,7 +7,7 @@ from instascene.manifest.sample import build_sample_argparser, run_sample_job
 from instascene.manifest.sample_registry import SAMPLE_JOB_CONFIGS, get_sample_job_config
 
 _DESCRIPTION = (
-    "Sample scenes from a registered dataset and write a scene-path manifest JSON."
+    "Sample scenes from a registered dataset and write a scene selection lockfile JSON."
 )
 
 _DATASET_HELP = "\n".join(

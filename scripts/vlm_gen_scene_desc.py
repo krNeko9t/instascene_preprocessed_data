@@ -6,13 +6,9 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from instascene.manifest.io import (
-    load_scene_paths_manifest,
-    manifest_dataset_id,
-    manifest_id_map_source,
-    manifest_pair_by,
-    resolve_scene_paths,
-)
+from instascene.manifest.io import load_scene_selection_manifest
+from instascene.manifest.resolver import resolve_scene_ref
+from instascene.manifest.sample_registry import get_dataset_spec
 from instascene.types import normalize_overlay_styles
 from instascene.vlm.config import (
     DEFAULT_PROMPT_TEMPLATE,
@@ -42,7 +38,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--manifest",
         type=str,
         required=True,
-        help="Scene-path manifest JSON (from sample_scenes.py --dataset ...)",
+        help="Scene selection lockfile JSON (from sample_scenes.py --dataset ...)",
     )
     parser.add_argument("--min-pixel-count", type=int, default=300)
     parser.add_argument("--min-pixel-ratio", type=float, default=0.15)
@@ -108,22 +104,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _iter_scene_inputs(manifest_path: Path) -> list[SceneRunInput]:
-    doc = load_scene_paths_manifest(manifest_path)
-    dataset_id = manifest_dataset_id(doc)
-    id_map_source = manifest_id_map_source(doc)
-    pair_by = manifest_pair_by(doc)
+    doc = load_scene_selection_manifest(manifest_path)
     if not doc.scenes:
         raise ValueError(f"No scenes found in manifest: {manifest_path}")
     inputs: list[SceneRunInput] = []
     for entry in doc.scenes:
-        resolved = resolve_scene_paths(entry, doc.dataset_root)
+        dataset_root = doc.dataset_roots[entry.dataset_id]
+        spec = get_dataset_spec(entry.dataset_id)
+        resolved = resolve_scene_ref(entry.dataset_id, entry.scene_id, dataset_root)
         inputs.append(
             SceneRunInput(
-                dataset_id=dataset_id,
+                dataset_id=entry.dataset_id,
                 scene_key=resolved.scene_key,
                 resolved=resolved,
-                id_map_source=id_map_source,
-                pair_by=pair_by,
+                id_map_source=spec.id_map_source,
+                pair_by=spec.pair_by,
             )
         )
     return inputs

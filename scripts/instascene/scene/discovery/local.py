@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from instascene.scene.models import ScenePathRecord
+from instascene.scene.ref import SceneRef
 
 __all__ = ["discover_local_extracted"]
 
 
-def discover_local_extracted(scenes_root: Path) -> list[ScenePathRecord]:
+def discover_local_extracted(scenes_root: Path) -> list[SceneRef]:
     """One directory per scene with ``images/`` and ``id_maps/`` or ``sam/mask/``."""
-    out: list[ScenePathRecord] = []
+    out: list[SceneRef] = []
     for child in sorted(scenes_root.iterdir()):
         if not child.is_dir() or child.name.startswith("."):
             continue
@@ -20,20 +20,8 @@ def discover_local_extracted(scenes_root: Path) -> list[ScenePathRecord]:
             continue
         id_maps = child / "id_maps"
         sam_mask = child / "sam" / "mask"
-        if id_maps.is_dir():
-            id_map_dir = id_maps.resolve()
-        elif sam_mask.is_dir():
-            id_map_dir = sam_mask.resolve()
-        else:
+        if not id_maps.is_dir() and not sam_mask.is_dir():
             continue
-        out.append(
-            ScenePathRecord(
-                partition="",
-                scene_name=child.name,
-                scene_root=child.resolve(),
-                image_dir=images.resolve(),
-                id_map_dir=id_map_dir,
-            )
-        )
-    out.sort(key=lambda e: e.scene_name)
+        out.append(SceneRef(scene_id=child.name))
+    out.sort(key=lambda e: e.scene_id)
     return out

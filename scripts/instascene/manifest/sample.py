@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Sequence
 
-from instascene.manifest.roots import path_for_manifest_json
-from instascene.scene.models import ScenePathRecord
+from instascene.manifest.models import MANIFEST_KIND, SCHEMA_VERSION
+from instascene.scene.ref import SceneRef
 from instascene.types import IdMapSource, PairingStrategy
 
 __all__ = [
@@ -22,14 +22,14 @@ __all__ = [
 
 @dataclass(frozen=True, slots=True)
 class SampleJobConfig:
-    """Bind one dataset: default root, discover function, manifest pair_by, and stderr messages."""
+    """Bind one dataset: default root, discover function, and stderr messages."""
 
     dataset_id: str
     description: str
     default_root: Path
-    discover: Callable[[Path], list[ScenePathRecord]]
+    discover: Callable[[Path], list[SceneRef]]
     id_map_source: IdMapSource
-    pair_by: PairingStrategy | None
+    pair_by: PairingStrategy
     empty_candidates_template: str
     root_not_dir_template: str = "error: not a directory: {root}"
 
@@ -69,12 +69,6 @@ def build_sample_argparser(description: str, *, default_root: Path) -> argparse.
         help="JSON indent (default: 2); use 0 for compact single-line output",
     )
     parser.add_argument(
-        "--relative-to",
-        type=str,
-        default="",
-        help="If set, emit paths relative to this directory instead of absolute",
-    )
-    parser.add_argument(
         "--shuffle",
         action="store_true",
         help="Shuffle order (--n=-1 yields all scenes in random order; uses --seed if set)",
@@ -92,12 +86,12 @@ def resolve_root(cli_root: str, default_root: Path) -> Path:
 
 
 def select_scene_subset(
-    candidates: Sequence[ScenePathRecord],
+    candidates: Sequence[SceneRef],
     *,
     n_requested: int,
     seed: int | None,
     shuffle: bool,
-) -> list[ScenePathRecord]:
+) -> list[SceneRef]:
     rng = random.Random(seed)
     if n_requested == -1:
         selected = list(candidates)
@@ -113,24 +107,8 @@ def select_scene_subset(
     return rng.sample(list(candidates), k)
 
 
-def records_to_manifest_scenes(
-    records: Sequence[ScenePathRecord],
-    relative_to: Path | None,
-) -> list[dict[str, str]]:
-    rows: list[dict[str, str]] = []
-    for e in records:
-        row: dict[str, str] = {
-            "partition": e.partition,
-            "scene_name": e.scene_name,
-            "scene_root": path_for_manifest_json(e.scene_root, relative_to=relative_to),
-            "image_dir": path_for_manifest_json(e.image_dir, relative_to=relative_to),
-        }
-        if e.id_map_dir is not None:
-            row["id_map_dir"] = path_for_manifest_json(e.id_map_dir, relative_to=relative_to)
-        if e.id_map_json is not None:
-            row["id_map_json"] = path_for_manifest_json(e.id_map_json, relative_to=relative_to)
-        rows.append(row)
-    return rows
+def refs_to_manifest_scenes(dataset_id: str, refs: Sequence[SceneRef]) -> list[dict[str, str]]:
+    return [{"dataset_id": dataset_id, "scene_id": ref.scene_id} for ref in refs]
 
 
 def build_manifest_payload(
@@ -138,31 +116,28 @@ def build_manifest_payload(
     scenes: list[dict[str, str]],
     *,
     dataset_id: str,
-    id_map_source: IdMapSource,
     n_candidates: int,
     n_selected: int,
     n_requested: int,
     seed: int | None,
     shuffle: bool,
     strict: bool,
-    pair_by: PairingStrategy | None,
 ) -> dict[str, object]:
-    payload: dict[str, object] = {
-        "dataset_id": dataset_id,
-        "dataset_root": str(dataset_root),
-        "id_map_source": id_map_source,
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "kind": MANIFEST_KIND,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "num_candidates": n_candidates,
-        "num_selected": n_selected,
-        "n_requested": n_requested,
-        "seed": seed,
-        "shuffle": shuffle,
-        "strict": strict,
+        "sampling": {
+            "num_candidates": n_candidates,
+            "num_selected": n_selected,
+            "n_requested": n_requested,
+            "seed": seed,
+            "shuffle": shuffle,
+            "strict": strict,
+        },
+        "dataset_roots": {dataset_id: str(dataset_root)},
         "scenes": scenes,
     }
-    if pair_by is not None:
-        payload["pair_by"] = pair_by
-    return payload
 
 
 def write_manifest(path: Path, payload: dict[str, object], indent: int) -> None:
@@ -185,10 +160,6 @@ def run_sample_job(config: SampleJobConfig, argv: list[str] | None = None) -> in
         print(config.root_not_dir_template.format(root=dataset_root), file=sys.stderr)
         return 1
 
-    relative_to = None
-    if args.relative_to.strip():
-        relative_to = Path(args.relative_to).expanduser().resolve()
-
     candidates = config.discover(dataset_root)
     n_candidates = len(candidates)
     if n_candidates == 0:
@@ -210,19 +181,17 @@ def run_sample_job(config: SampleJobConfig, argv: list[str] | None = None) -> in
         shuffle=bool(args.shuffle),
     )
 
-    scenes = records_to_manifest_scenes(selected, relative_to)
+    scenes = refs_to_manifest_scenes(config.dataset_id, selected)
     payload = build_manifest_payload(
         dataset_root,
         scenes,
         dataset_id=config.dataset_id,
-        id_map_source=config.id_map_source,
         n_candidates=n_candidates,
         n_selected=len(selected),
         n_requested=n_requested,
         seed=args.seed,
         shuffle=bool(args.shuffle),
         strict=bool(args.strict),
-        pair_by=config.pair_by,
     )
 
     out_path = Path(args.output)

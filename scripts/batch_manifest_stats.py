@@ -4,35 +4,31 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
-from instascene.manifest.io import (
-    load_scene_paths_manifest,
-    manifest_dataset_id,
-    manifest_id_map_source,
-    manifest_pair_by,
-    resolve_scene_paths,
-)
+from instascene.manifest.io import load_scene_selection_manifest
+from instascene.manifest.resolver import resolve_scene_ref
+from instascene.manifest.sample_registry import get_dataset_spec
 from instascene.stats.scene_views import summarize_manifest_scene
 from instascene.types import IdMapSource, PairingStrategy
 
 
-def effective_id_map_source(doc, cli_value: str) -> IdMapSource:
+def effective_id_map_source(dataset_id: str, cli_value: str) -> IdMapSource:
     if cli_value != "auto":
         return cast(IdMapSource, cli_value)
-    return manifest_id_map_source(doc)
+    return get_dataset_spec(dataset_id).id_map_source
 
 
-def effective_pairing(doc, cli_value: str) -> PairingStrategy:
+def effective_pairing(dataset_id: str, cli_value: str) -> PairingStrategy:
     if cli_value != "auto":
         return cast(PairingStrategy, cli_value)
-    return manifest_pair_by(doc)
+    return get_dataset_spec(dataset_id).pair_by
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Count views and distinct object ids per scene from a scene-path manifest "
+            "Count views and distinct object ids per scene from a scene selection lockfile "
             "(from sample_scenes.py --dataset ...)."
         ),
     )
@@ -40,14 +36,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--manifest",
         type=str,
         required=True,
-        help="Path to manifest JSON (from sample_scenes.py)",
+        help="Path to scene selection lockfile (from sample_scenes.py)",
     )
     parser.add_argument(
         "--id-map-source",
         type=str,
         default="auto",
         choices=["auto", "npy", "png", "sam2_json"],
-        help="Mask format; auto reads manifest id_map_source (default: auto).",
+        help="Mask format; auto reads dataset registry (default: auto).",
     )
     parser.add_argument(
         "--output",
@@ -70,7 +66,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default="auto",
         choices=["auto", "stem", "infinigen"],
-        help="Pairing strategy; auto reads manifest pair_by (default: auto).",
+        help="Pairing strategy; auto reads dataset registry (default: auto).",
     )
     return parser
 
@@ -79,25 +75,27 @@ def main() -> int:
     args = build_arg_parser().parse_args()
     manifest_path = Path(args.manifest).expanduser().resolve()
 
-    doc = load_scene_paths_manifest(manifest_path)
-    dataset_id = manifest_dataset_id(doc)
-    id_map_source = effective_id_map_source(doc, args.id_map_source)
-    pairing = effective_pairing(doc, args.pair_by)
+    doc = load_scene_selection_manifest(manifest_path)
     scene_rows: list[dict[str, Any]] = []
     n_errors = 0
 
     for entry in doc.scenes:
-        resolved = resolve_scene_paths(entry, doc.dataset_root)
+        dataset_root = doc.dataset_roots[entry.dataset_id]
+        id_map_source = effective_id_map_source(entry.dataset_id, args.id_map_source)
+        pairing = effective_pairing(entry.dataset_id, args.pair_by)
+        resolved = resolve_scene_ref(entry.dataset_id, entry.scene_id, dataset_root)
         stats = summarize_manifest_scene(
             resolved,
-            dataset_id,
+            entry.dataset_id,
             id_map_source,
             pair_by=pairing,
         )
         row: dict[str, Any] = {
-            "partition": entry.partition,
-            "scene_name": entry.scene_name,
+            "dataset_id": entry.dataset_id,
+            "scene_id": entry.scene_id,
             "scene_key": stats.scene_key,
+            "id_map_source": id_map_source,
+            "pair_by": pairing,
             "n_views": stats.n_views,
             "n_objects": stats.n_objects,
             "resolved_scene_root": str(resolved.scene_root),
@@ -122,11 +120,17 @@ def main() -> int:
 
     payload: dict[str, Any] = {
         "source_manifest": str(manifest_path),
-        "dataset_id": dataset_id,
-        "id_map_source": id_map_source,
-        "pair_by": pairing,
-        "manifest_metadata": dict(doc.metadata),
-        "manifest_dataset_root": str(doc.dataset_root),
+        "schema_version": doc.schema_version,
+        "kind": doc.kind,
+        "dataset_roots": {k: str(v) for k, v in doc.dataset_roots.items()},
+        "sampling": {
+            "num_candidates": doc.sampling.num_candidates,
+            "num_selected": doc.sampling.num_selected,
+            "n_requested": doc.sampling.n_requested,
+            "seed": doc.sampling.seed,
+            "shuffle": doc.sampling.shuffle,
+            "strict": doc.sampling.strict,
+        },
         "scenes": scene_rows,
         "totals": {
             "n_scenes": n_scenes,
