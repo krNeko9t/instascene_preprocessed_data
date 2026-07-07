@@ -65,26 +65,19 @@ def load_scene_paths_manifest(path: Path) -> ScenePathsManifest:
         for key in ("partition", "scene_name", "scene_root", "image_dir"):
             if key not in item:
                 raise ValueError(f"scenes[{i}] missing key {key!r}")
-        raw_id = item.get("id_map_dir")
-        id_map_dir: str | None
-        if raw_id is None or raw_id == "":
-            id_map_dir = None
-        else:
-            id_map_dir = str(raw_id)
-        raw_ij = item.get("id_map_json")
-        id_map_json: str | None
-        if raw_ij is None or raw_ij == "":
-            id_map_json = None
-        else:
-            id_map_json = str(raw_ij)
+
+        def _optional_str(raw: object) -> str | None:
+            if raw is None or raw == "": return None
+            return str(raw)
+            
         scenes.append(
             ScenePathsManifestEntry(
                 partition=str(item["partition"]),
                 scene_name=str(item["scene_name"]),
                 scene_root=str(item["scene_root"]),
                 image_dir=str(item["image_dir"]),
-                id_map_dir=id_map_dir,
-                id_map_json=id_map_json,
+                id_map_dir=_optional_str(item.get("id_map_dir")),
+                id_map_json=_optional_str(item.get("id_map_json")),
             )
         )
 
