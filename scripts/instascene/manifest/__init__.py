@@ -1,4 +1,10 @@
-from instascene.manifest.io import load_scene_paths_manifest, resolve_scene_paths
+from instascene.manifest.io import (
+    load_scene_paths_manifest,
+    manifest_dataset_id,
+    manifest_id_map_source,
+    manifest_pair_by,
+    resolve_scene_paths,
+)
 from instascene.manifest.models import (
     ResolvedScenePaths,
     ScenePathRecord,
@@ -33,6 +39,9 @@ __all__ = [
     "ScenePathsManifestEntry",
     "get_sample_job_config",
     "load_scene_paths_manifest",
+    "manifest_dataset_id",
+    "manifest_id_map_source",
+    "manifest_pair_by",
     "path_for_manifest_json",
     "resolve_scene_paths",
     "run_sample_job",

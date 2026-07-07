@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
 from instascene.manifest.models import (
     ResolvedScenePaths,
     ScenePathsManifest,
     ScenePathsManifestEntry,
 )
+from instascene.types import IdMapSource, PairingStrategy
 
-__all__ = ["load_scene_paths_manifest", "resolve_scene_paths"]
+__all__ = [
+    "load_scene_paths_manifest",
+    "manifest_dataset_id",
+    "manifest_id_map_source",
+    "manifest_pair_by",
+    "resolve_scene_paths",
+]
 
 
 def _resolve_path(raw: str, dataset_root: Path) -> Path:
@@ -82,3 +90,32 @@ def load_scene_paths_manifest(path: Path) -> ScenePathsManifest:
 
     metadata = {k: v for k, v in data.items() if k not in {"dataset_root", "scenes"}}
     return ScenePathsManifest(dataset_root=dataset_root, scenes=scenes, metadata=metadata)
+
+
+def manifest_dataset_id(doc: ScenePathsManifest) -> str:
+    raw = doc.metadata.get("dataset_id")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return "unknown"
+
+
+def manifest_id_map_source(doc: ScenePathsManifest) -> IdMapSource:
+    raw = doc.metadata.get("id_map_source")
+    if raw in ("npy", "png", "sam2_json"):
+        return cast(IdMapSource, raw)
+    for entry in doc.scenes:
+        if entry.id_map_json:
+            return "sam2_json"
+        if entry.id_map_dir:
+            suffix = Path(entry.id_map_dir).suffix.lower()
+            if suffix == ".npy" or "id_maps" in entry.id_map_dir:
+                return "npy"
+            return "png"
+    return "png"
+
+
+def manifest_pair_by(doc: ScenePathsManifest, *, default: PairingStrategy = "stem") -> PairingStrategy:
+    raw = doc.metadata.get("pair_by")
+    if raw in ("stem", "infinigen"):
+        return cast(PairingStrategy, raw)
+    return default

@@ -48,4 +48,6 @@ class ResolvedScenePaths:
 
     @property
     def scene_key(self) -> str:
-        return f"{self.partition}/{self.scene_name}"
+        if self.partition:
+            return f"{self.partition}/{self.scene_name}"
+        return self.scene_name

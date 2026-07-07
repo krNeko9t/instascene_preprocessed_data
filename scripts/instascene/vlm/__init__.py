@@ -1,3 +1,4 @@
+from instascene.vlm.client import VLMClient
 from instascene.vlm.config import (
     DEFAULT_PROMPT_TEMPLATE,
     DEFAULT_VIEW_COMPOSE_SPEC,
@@ -10,7 +11,7 @@ from instascene.vlm.config import (
     resolve_view_compose_fields,
     resolve_vlm_prompt_template,
 )
-from instascene.vlm.pipeline import list_datasets, list_scenes, process_scene
+from instascene.vlm.pipeline import SceneRunInput, process_scene
 
 __all__ = [
     "DEFAULT_PROMPT_TEMPLATE",
@@ -19,10 +20,10 @@ __all__ = [
     "PipelineConfig",
     "RunControlConfig",
     "SceneInputConfig",
+    "SceneRunInput",
     "ViewRenderConfig",
+    "VLMClient",
     "VlmConfig",
-    "list_datasets",
-    "list_scenes",
     "process_scene",
     "resolve_view_compose_fields",
     "resolve_vlm_prompt_template",

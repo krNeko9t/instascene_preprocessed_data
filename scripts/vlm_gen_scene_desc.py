@@ -6,6 +6,13 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from instascene.manifest.io import (
+    load_scene_paths_manifest,
+    manifest_dataset_id,
+    manifest_id_map_source,
+    manifest_pair_by,
+    resolve_scene_paths,
+)
 from instascene.types import normalize_overlay_styles
 from instascene.vlm.config import (
     DEFAULT_PROMPT_TEMPLATE,
@@ -18,7 +25,7 @@ from instascene.vlm.config import (
     resolve_view_compose_fields,
     resolve_vlm_prompt_template,
 )
-from instascene.vlm.pipeline import list_datasets, list_scenes, process_scene
+from instascene.vlm.pipeline import SceneRunInput, process_scene
 
 
 def _parse_overlay_style_arg(value: str) -> str:
@@ -31,28 +38,17 @@ def _parse_overlay_style_arg(value: str) -> str:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="VLM scene object processing pipeline")
-    parser.add_argument("--data-root", type=str, default=".")
-    parser.add_argument("--dataset", type=str, default="3dovs", help="Dataset name or 'all'")
-    parser.add_argument("--scene", type=str, default="bench", help="Scene name or 'all'")
-    parser.add_argument("--mask-subdir", type=str, default="mask")
     parser.add_argument(
-        "--image-subdir",
+        "--manifest",
         type=str,
-        default="images",
-        help="Subdirectory of each scene for RGB images (e.g. rgb for RE10K, images for Infinigen-style).",
+        required=True,
+        help="Scene-path manifest JSON (from sample_scenes.py --dataset ...)",
     )
     parser.add_argument(
-        "--id-map-source",
-        type=str,
-        default="npy",
-        choices=["npy", "png", "sam2_json"],
-        help="ID map source: npy from id_maps/, png from sam/<mask_subdir>/, or sam2_json (auto_masks.json RLE).",
-    )
-    parser.add_argument(
-        "--sam2-json",
+        "--scene-key",
         type=str,
         default="",
-        help="Path to auto_masks.json (optional; default: <scene_root>/../sam2_results/<scene>/auto_masks.json).",
+        help="Process only this scene_key (e.g. bench or scene_001/foo). Default: all scenes in manifest.",
     )
     parser.add_argument("--min-pixel-count", type=int, default=300)
     parser.add_argument("--min-pixel-ratio", type=float, default=0.15)
@@ -117,11 +113,37 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _iter_scene_inputs(manifest_path: Path, scene_key_filter: str) -> list[SceneRunInput]:
+    doc = load_scene_paths_manifest(manifest_path)
+    dataset_id = manifest_dataset_id(doc)
+    id_map_source = manifest_id_map_source(doc)
+    pair_by = manifest_pair_by(doc)
+    inputs: list[SceneRunInput] = []
+    for entry in doc.scenes:
+        resolved = resolve_scene_paths(entry, doc.dataset_root)
+        if scene_key_filter and resolved.scene_key != scene_key_filter:
+            continue
+        inputs.append(
+            SceneRunInput(
+                dataset_id=dataset_id,
+                scene_key=resolved.scene_key,
+                resolved=resolved,
+                id_map_source=id_map_source,
+                pair_by=pair_by,
+            )
+        )
+    if scene_key_filter and not inputs:
+        raise ValueError(f"scene_key {scene_key_filter!r} not found in manifest: {manifest_path}")
+    if not inputs:
+        raise ValueError(f"No scenes found in manifest: {manifest_path}")
+    return inputs
+
+
 async def main_async() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
 
-    data_root = Path(args.data_root).expanduser().resolve()
+    manifest_path = Path(args.manifest).expanduser().resolve()
     if args.output_dir.strip():
         output_dir = args.output_dir
     else:
@@ -137,22 +159,8 @@ async def main_async() -> None:
         inline_template=args.prompt_template,
     )
 
-    sam2_json_path = (
-        Path(args.sam2_json).expanduser().resolve()
-        if (args.sam2_json or "").strip()
-        else None
-    )
-
     cfg = PipelineConfig(
-        scene_input=SceneInputConfig(
-            data_root=data_root,
-            dataset=args.dataset,
-            scene=args.scene,
-            mask_subdir=args.mask_subdir,
-            id_map_source=args.id_map_source,
-            image_subdir=args.image_subdir,
-            sam2_json_path=sam2_json_path,
-        ),
+        scene_input=SceneInputConfig(manifest_path=manifest_path),
         object_filter=ObjectFilterConfig(
             min_pixel_count=args.min_pixel_count,
             min_pixel_ratio=args.min_pixel_ratio,
@@ -184,17 +192,17 @@ async def main_async() -> None:
         ),
     )
 
-    if (cfg.run.target_object_id is not None or cfg.run.single_object_only) and (
-        cfg.scene_input.dataset == "all" or cfg.scene_input.scene == "all"
-    ):
-        raise ValueError("--object-id / --single-object must be used with a specific --dataset and --scene")
+    scene_key_filter = (args.scene_key or "").strip()
+    scene_inputs = _iter_scene_inputs(manifest_path, scene_key_filter)
 
-    datasets = list_datasets(cfg.scene_input.data_root) if cfg.scene_input.dataset == "all" else [cfg.scene_input.dataset]
-    for dataset in datasets:
-        scenes = list_scenes(cfg.scene_input.data_root, dataset) if cfg.scene_input.scene == "all" else [cfg.scene_input.scene]
-        for scene in scenes:
-            output_path = await process_scene(cfg, dataset, scene)
-            print(f"[done] {dataset}/{scene} -> {output_path}")
+    if (cfg.run.target_object_id is not None or cfg.run.single_object_only) and len(scene_inputs) != 1:
+        raise ValueError(
+            "--object-id / --single-object requires exactly one scene; use --scene-key to select one scene"
+        )
+
+    for scene_input in scene_inputs:
+        output_path = await process_scene(cfg, scene_input)
+        print(f"[done] {scene_input.dataset_id}/{scene_input.scene_key} -> {output_path}")
 
 
 def main() -> None:

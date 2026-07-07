@@ -6,43 +6,48 @@ import sys
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from instascene.manifest.io import load_scene_paths_manifest, resolve_scene_paths
-from instascene.manifest.models import ScenePathsManifest
+from instascene.manifest.io import (
+    load_scene_paths_manifest,
+    manifest_dataset_id,
+    manifest_id_map_source,
+    manifest_pair_by,
+    resolve_scene_paths,
+)
 from instascene.stats.scene_views import summarize_manifest_scene
-from instascene.types import PairingStrategy
+from instascene.types import IdMapSource, PairingStrategy
 
 
-def effective_pairing(doc: ScenePathsManifest, cli_value: str) -> PairingStrategy:
+def effective_id_map_source(doc, cli_value: str) -> IdMapSource:
+    if cli_value != "auto":
+        return cast(IdMapSource, cli_value)
+    return manifest_id_map_source(doc)
+
+
+def effective_pairing(doc, cli_value: str) -> PairingStrategy:
     if cli_value != "auto":
         return cast(PairingStrategy, cli_value)
-    meta = doc.metadata.get("pair_by")
-    if meta in ("stem", "infinigen"):
-        return cast(PairingStrategy, meta)
-    return "infinigen"
+    return manifest_pair_by(doc)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Count views and distinct object ids per scene from a scene-path manifest "
-            "(from sample_scenes.py --dataset infinigen|re10k|scannetpp_v2)."
+            "(from sample_scenes.py --dataset ...)."
         ),
     )
     parser.add_argument(
         "--manifest",
         type=str,
         required=True,
-        help="Path to manifest JSON (from sample_scenes.py --dataset infinigen|re10k|scannetpp_v2)",
+        help="Path to manifest JSON (from sample_scenes.py)",
     )
     parser.add_argument(
         "--id-map-source",
         type=str,
-        default="png",
-        choices=["npy", "png", "sam2_json"],
-        help=(
-            "Mask format under id_map_dir (npy|png), or sam2_json when manifest scenes only have "
-            "id_map_json (auto_masks.json). Ignored for scenes that only specify id_map_json (RE10K)."
-        ),
+        default="auto",
+        choices=["auto", "npy", "png", "sam2_json"],
+        help="Mask format; auto reads manifest id_map_source (default: auto).",
     )
     parser.add_argument(
         "--output",
@@ -65,10 +70,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default="auto",
         choices=["auto", "stem", "infinigen"],
-        help=(
-            "auto: use manifest top-level pair_by if set (stem|infinigen), else infinigen. "
-            "infinigen=Image_* vs ObjectSegmentation_*; stem=same basename (e.g. ScanNet++ jpg/png)."
-        ),
+        help="Pairing strategy; auto reads manifest pair_by (default: auto).",
     )
     return parser
 
@@ -76,16 +78,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_arg_parser().parse_args()
     manifest_path = Path(args.manifest).expanduser().resolve()
-    id_map_source: Literal["npy", "png", "sam2_json"] = args.id_map_source  # type: ignore[assignment]
 
     doc = load_scene_paths_manifest(manifest_path)
+    dataset_id = manifest_dataset_id(doc)
+    id_map_source = effective_id_map_source(doc, args.id_map_source)
     pairing = effective_pairing(doc, args.pair_by)
     scene_rows: list[dict[str, Any]] = []
     n_errors = 0
 
     for entry in doc.scenes:
         resolved = resolve_scene_paths(entry, doc.dataset_root)
-        stats = summarize_manifest_scene(resolved, id_map_source, pairing=pairing)
+        stats = summarize_manifest_scene(
+            resolved,
+            dataset_id,
+            id_map_source,
+            pair_by=pairing,
+        )
         row: dict[str, Any] = {
             "partition": entry.partition,
             "scene_name": entry.scene_name,
@@ -114,6 +122,7 @@ def main() -> int:
 
     payload: dict[str, Any] = {
         "source_manifest": str(manifest_path),
+        "dataset_id": dataset_id,
         "id_map_source": id_map_source,
         "pair_by": pairing,
         "manifest_metadata": dict(doc.metadata),

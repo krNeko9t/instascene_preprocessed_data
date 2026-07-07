@@ -14,6 +14,12 @@ SCANNETPPV2_ROOT = (
     INS_SCENE_15K_ROOT / "processed_scannetpp_v2_extracted" / "processed_scannetpp_v2"
 )
 
+# Repo root: scripts/instascene/manifest/roots.py -> parents[3]
+LOCAL_DATA_ROOT = Path(__file__).resolve().parents[3]
+LOCAL_3DOVS_ROOT = LOCAL_DATA_ROOT / "3dovs"
+LOCAL_LERF_ROOT = LOCAL_DATA_ROOT / "lerf"
+LOCAL_ZIPNERF_ROOT = LOCAL_DATA_ROOT / "zipnerf"
+
 
 def path_for_manifest_json(path: Path, *, relative_to: Path | None) -> str:
     if relative_to is None:

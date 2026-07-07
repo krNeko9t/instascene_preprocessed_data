@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from instascene.types import IdMapSource, OverlayStyle
+from instascene.types import OverlayStyle
 
 DEFAULT_PROMPT_TEMPLATE = (
     "You are given images of the same object from multiple views in a scene. "
@@ -73,15 +73,9 @@ def resolve_vlm_prompt_template(*, prompt_file: str, inline_template: str) -> tu
 
 @dataclass(slots=True)
 class SceneInputConfig:
-    """Paths and loaders for scene imagery and ID maps."""
+    """Manifest path for scene enumeration and loading."""
 
-    data_root: Path
-    dataset: str = "3dovs"
-    scene: str = "bench"
-    mask_subdir: str = "mask"
-    id_map_source: IdMapSource = "npy"
-    image_subdir: str = "images"
-    sam2_json_path: Path | None = None
+    manifest_path: Path
 
 
 @dataclass(slots=True)
@@ -139,15 +133,8 @@ class PipelineConfig:
     vlm: VlmConfig
     run: RunControlConfig
 
-    def scene_root(self, dataset: str | None = None, scene: str | None = None) -> Path:
-        ds = dataset or self.scene_input.dataset
-        sc = scene or self.scene_input.scene
-        return self.scene_input.data_root / ds / sc
-
-    def scene_output_dir(self, dataset: str | None = None, scene: str | None = None) -> Path:
+    def scene_output_dir(self, dataset_id: str, scene_key: str) -> Path:
         root = Path(self.run.output_dir)
         if not root.is_absolute():
-            root = self.scene_input.data_root / root
-        ds = dataset or self.scene_input.dataset
-        sc = scene or self.scene_input.scene
-        return root / ds / sc
+            root = Path.cwd() / root
+        return root / dataset_id / scene_key

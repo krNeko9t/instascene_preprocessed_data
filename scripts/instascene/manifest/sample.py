@@ -11,6 +11,7 @@ from typing import Callable, Sequence
 
 from instascene.manifest.roots import path_for_manifest_json
 from instascene.scene.models import ScenePathRecord
+from instascene.types import IdMapSource, PairingStrategy
 
 __all__ = [
     "SampleJobConfig",
@@ -23,10 +24,12 @@ __all__ = [
 class SampleJobConfig:
     """Bind one dataset: default root, discover function, manifest pair_by, and stderr messages."""
 
+    dataset_id: str
     description: str
     default_root: Path
     discover: Callable[[Path], list[ScenePathRecord]]
-    pair_by: str | None
+    id_map_source: IdMapSource
+    pair_by: PairingStrategy | None
     empty_candidates_template: str
     root_not_dir_template: str = "error: not a directory: {root}"
 
@@ -95,10 +98,11 @@ def select_scene_subset(
     seed: int | None,
     shuffle: bool,
 ) -> list[ScenePathRecord]:
+    rng = random.Random(seed)
     if n_requested == -1:
         selected = list(candidates)
         if shuffle:
-            random.shuffle(selected)
+            rng.shuffle(selected)
         return selected
     k = min(n_requested, len(candidates))
     if k < n_requested:
@@ -106,7 +110,7 @@ def select_scene_subset(
             f"warning: requested N={n_requested} but only {len(candidates)} candidates; selecting {k}",
             file=sys.stderr,
         )
-    return random.sample(list(candidates), k)
+    return rng.sample(list(candidates), k)
 
 
 def records_to_manifest_scenes(
@@ -133,16 +137,20 @@ def build_manifest_payload(
     dataset_root: Path,
     scenes: list[dict[str, str]],
     *,
+    dataset_id: str,
+    id_map_source: IdMapSource,
     n_candidates: int,
     n_selected: int,
     n_requested: int,
     seed: int | None,
     shuffle: bool,
     strict: bool,
-    pair_by: str | None,
+    pair_by: PairingStrategy | None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
+        "dataset_id": dataset_id,
         "dataset_root": str(dataset_root),
+        "id_map_source": id_map_source,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "num_candidates": n_candidates,
         "num_selected": n_selected,
@@ -195,9 +203,6 @@ def run_sample_job(config: SampleJobConfig, argv: list[str] | None = None) -> in
         )
         return 3
 
-    if args.seed is not None:
-        random.seed(args.seed)
-
     selected = select_scene_subset(
         candidates,
         n_requested=n_requested,
@@ -209,6 +214,8 @@ def run_sample_job(config: SampleJobConfig, argv: list[str] | None = None) -> in
     payload = build_manifest_payload(
         dataset_root,
         scenes,
+        dataset_id=config.dataset_id,
+        id_map_source=config.id_map_source,
         n_candidates=n_candidates,
         n_selected=len(selected),
         n_requested=n_requested,

@@ -1,31 +1,39 @@
+"""Discover scenes under the local ``<dataset>/<scene>/images + mask`` layout."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List
 
-__all__ = ["list_datasets", "list_scenes"]
+from instascene.scene.models import ScenePathRecord
 
-
-def list_scenes(data_root: Path, dataset: str) -> List[str]:
-    dataset_dir = data_root / dataset
-    if not dataset_dir.exists():
-        raise FileNotFoundError(f"Dataset does not exist: {dataset_dir}")
-    scenes = [p.name for p in sorted(dataset_dir.iterdir()) if p.is_dir()]
-    return scenes
+__all__ = ["discover_local_extracted"]
 
 
-def list_datasets(data_root: Path) -> List[str]:
-    datasets: List[str] = []
-    for ds_dir in sorted(data_root.iterdir()):
-        if not ds_dir.is_dir() or ds_dir.name.startswith("."):
+def discover_local_extracted(scenes_root: Path) -> list[ScenePathRecord]:
+    """One directory per scene with ``images/`` and ``id_maps/`` or ``sam/mask/``."""
+    out: list[ScenePathRecord] = []
+    for child in sorted(scenes_root.iterdir()):
+        if not child.is_dir() or child.name.startswith("."):
             continue
-        has_scene = False
-        for scene_dir in ds_dir.iterdir():
-            if not scene_dir.is_dir():
-                continue
-            if (scene_dir / "images").exists() and (scene_dir / "sam").exists():
-                has_scene = True
-                break
-        if has_scene:
-            datasets.append(ds_dir.name)
-    return datasets
+        images = child / "images"
+        if not images.is_dir():
+            continue
+        id_maps = child / "id_maps"
+        sam_mask = child / "sam" / "mask"
+        if id_maps.is_dir():
+            id_map_dir = id_maps.resolve()
+        elif sam_mask.is_dir():
+            id_map_dir = sam_mask.resolve()
+        else:
+            continue
+        out.append(
+            ScenePathRecord(
+                partition="",
+                scene_name=child.name,
+                scene_root=child.resolve(),
+                image_dir=images.resolve(),
+                id_map_dir=id_map_dir,
+            )
+        )
+    out.sort(key=lambda e: e.scene_name)
+    return out

@@ -10,11 +10,24 @@ from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
+from instascene.manifest.models import ResolvedScenePaths
+from instascene.scene.loaders.scene import load_scene_from_paths
+from instascene.types import IdMapSource, PairingStrategy
+from instascene.vlm.client import VLMClient
 from instascene.vlm.config import PipelineConfig
-from instascene.scene.loaders.scene import load_scene
 from instascene.vlm.preparer import ImageBatch, prepare_image_batches
 from instascene.vlm.selector import select_views_for_object
-from instascene.vlm.client import VLMClient
+
+__all__ = ["SceneRunInput", "process_scene"]
+
+
+@dataclass(slots=True, frozen=True)
+class SceneRunInput:
+    dataset_id: str
+    scene_key: str
+    resolved: ResolvedScenePaths
+    id_map_source: IdMapSource
+    pair_by: PairingStrategy
 
 
 @dataclass(slots=True)
@@ -50,8 +63,9 @@ def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _make_instance_id(dataset: str, scene: str, object_id: int) -> str:
-    return f"{dataset}_{scene}_inst{object_id:03d}"
+def _make_instance_id(dataset_id: str, scene_key: str, object_id: int) -> str:
+    safe_scene = scene_key.replace("/", "_")
+    return f"{dataset_id}_{safe_scene}_inst{object_id:03d}"
 
 
 def _model_to_filename(model_name: str) -> str:
@@ -62,15 +76,15 @@ def _model_to_filename(model_name: str) -> str:
 def _build_prompt(
     config: PipelineConfig,
     *,
-    dataset: str,
-    scene: str,
+    dataset_id: str,
+    scene_key: str,
     object_id: int,
     batch: ImageBatch,
 ) -> str:
     view_names = [img.view_name for img in batch.images]
     return config.vlm.prompt_template.format(
-        dataset=dataset,
-        scene=scene,
+        dataset=dataset_id,
+        scene=scene_key,
         object_id=object_id,
         n_views=len(set(view_names)),
         view_names=", ".join(sorted(set(view_names))),
@@ -147,17 +161,15 @@ def _dump_debug_batch(
             f.write(image_bytes)
 
 
-async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Path:
-    scene_data = load_scene(
-        config.scene_input.data_root,
-        dataset,
-        scene,
-        mask_subdir=config.scene_input.mask_subdir,
-        id_map_source=config.scene_input.id_map_source,
-        image_subdir=config.scene_input.image_subdir,
-        sam2_json_path=config.scene_input.sam2_json_path,
+async def process_scene(config: PipelineConfig, scene_input: SceneRunInput) -> Path:
+    scene_data = load_scene_from_paths(
+        scene_input.dataset_id,
+        scene_input.resolved,
+        id_map_source=scene_input.id_map_source,
+        pair_by=scene_input.pair_by,
     )
-    out_dir = config.scene_output_dir(dataset, scene)
+    label = f"{scene_input.dataset_id}/{scene_input.scene_key}"
+    out_dir = config.scene_output_dir(scene_input.dataset_id, scene_input.scene_key)
     out_dir.mkdir(parents=True, exist_ok=True)
     output_json = out_dir / _model_to_filename(config.vlm.model_name)
     error_log = out_dir / "errors.log"
@@ -167,7 +179,7 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
     if config.run.target_object_id is not None:
         if config.run.target_object_id not in scene_data.object_ids:
             raise ValueError(
-                f"Object ID {config.run.target_object_id} not found in {dataset}/{scene}. "
+                f"Object ID {config.run.target_object_id} not found in {label}. "
                 f"Available IDs: {scene_data.object_ids[:20]}{'...' if len(scene_data.object_ids) > 20 else ''}"
             )
         pending_ids = [config.run.target_object_id]
@@ -194,8 +206,8 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
         for batch_index, batch in enumerate(batches):
             prompt = _build_prompt(
                 config,
-                dataset=dataset,
-                scene=scene,
+                dataset_id=scene_input.dataset_id,
+                scene_key=scene_input.scene_key,
                 object_id=obj_id,
                 batch=batch,
             )
@@ -239,18 +251,18 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
     for future in tqdm(
         asyncio.as_completed(tasks),
         total=len(tasks),
-        desc=f"{dataset}/{scene}",
+        desc=label,
     ):
         try:
             await future
         except Exception as exc:  # noqa: BLE001
-            _append_error_log(error_log, f"{dataset}/{scene}: {exc}")
+            _append_error_log(error_log, f"{label}: {exc}")
 
     merged: Dict[int, Dict[str, Any]] = {**existing}
     for result in new_results:
         entry: Dict[str, Any] = {
             "id": result.id,
-            "instance_id": _make_instance_id(dataset, scene, result.id),
+            "instance_id": _make_instance_id(scene_input.dataset_id, scene_input.scene_key, result.id),
             "n_views": result.n_views,
             "mode": result.mode,
         }
@@ -264,8 +276,3 @@ async def process_scene(config: PipelineConfig, dataset: str, scene: str) -> Pat
     with output_json.open("w", encoding="utf-8") as f:
         json.dump(sorted_results, f, ensure_ascii=False, indent=2)
     return output_json
-
-
-from instascene.scene.discovery.local import list_datasets, list_scenes  # noqa: E402
-
-__all__ = ["process_scene", "list_datasets", "list_scenes"]

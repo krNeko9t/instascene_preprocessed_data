@@ -7,20 +7,19 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from instascene.manifest.models import ResolvedScenePaths
 from instascene.scene.loaders.masks import load_mask, load_npy_id_map
 from instascene.scene.loaders.sam2 import load_auto_masks_document, pair_sorted_rgb_with_masklet
 from instascene.scene.models import SceneData, ViewRecord
 from instascene.scene.pairing import list_mask_paths, pair_image_and_masks
-from instascene.types import SUPPORTED_IMAGE_SUFFIXES
+from instascene.types import IdMapSource, PairingStrategy, SUPPORTED_IMAGE_SUFFIXES
 
 __all__ = [
     "SUPPORTED_IMAGE_SUFFIXES",
     "SceneData",
     "ViewRecord",
     "build_views_from_sam2_json",
-    "load_scene",
-    "load_scene_from_npy",
-    "load_scene_from_png",
+    "load_scene_from_paths",
 ]
 
 
@@ -32,31 +31,6 @@ def _resize_mask_to_image(mask: np.ndarray, image_path: Path) -> np.ndarray:
         return mask
     resized = cv2.resize(mask, (img_w, img_h), interpolation=cv2.INTER_NEAREST)
     return resized.astype(mask.dtype, copy=False)
-
-
-def load_scene_from_png(scene_root: Path, mask_subdir: str) -> tuple[Path, List[Path]]:
-    mask_dir = scene_root / "sam" / mask_subdir
-    if not mask_dir.exists():
-        raise FileNotFoundError(f"Mask directory does not exist: {mask_dir}")
-    mask_files = list_mask_paths(mask_dir, "png")
-    if not mask_files:
-        raise RuntimeError(f"No mask files found in: {mask_dir}")
-    return mask_dir, mask_files
-
-
-def load_scene_from_npy(scene_root: Path) -> tuple[Path, List[Path]]:
-    id_map_dir = scene_root / "id_maps"
-    if not id_map_dir.exists():
-        raise FileNotFoundError(f"ID map directory does not exist: {id_map_dir}")
-    id_map_files = list_mask_paths(id_map_dir, "npy")
-    if not id_map_files:
-        raise RuntimeError(f"No npy id maps found in: {id_map_dir}")
-    return id_map_dir, id_map_files
-
-
-def default_sam2_auto_masks_path(scene_root: Path, scene_name: str) -> Path:
-    """``processed_re10k/<scene>/`` -> ``processed_re10k/sam2_results/<scene>/auto_masks.json``."""
-    return scene_root.parent / "sam2_results" / scene_name / "auto_masks.json"
 
 
 def build_views_from_sam2_json(
@@ -87,52 +61,51 @@ def build_views_from_sam2_json(
     return mask_dir, views
 
 
-def load_scene(
-    data_root: Path,
-    dataset: str,
-    scene: str,
-    mask_subdir: str = "mask",
-    id_map_source: str = "npy",
-    image_subdir: str = "images",
-    sam2_json_path: Path | None = None,
-) -> SceneData:
-    scene_root = data_root / dataset / scene
-    image_dir = scene_root / image_subdir
+def _build_object_index(views: List[ViewRecord]) -> tuple[list[int], Dict[int, List[ViewRecord]]]:
+    object_id_set: set[int] = set()
+    object_to_views: Dict[int, List[ViewRecord]] = {}
+    for record in views:
+        unique_ids = np.unique(record.mask)
+        for obj_id in unique_ids:
+            int_id = int(obj_id)
+            if int_id < 0:
+                continue
+            object_id_set.add(int_id)
+            object_to_views.setdefault(int_id, []).append(record)
+    return sorted(object_id_set), object_to_views
 
-    if not scene_root.exists():
-        raise FileNotFoundError(f"Scene directory does not exist: {scene_root}")
-    if not image_dir.exists():
+
+def load_scene_from_paths(
+    dataset_id: str,
+    resolved: ResolvedScenePaths,
+    *,
+    id_map_source: IdMapSource,
+    pair_by: PairingStrategy,
+) -> SceneData:
+    """Load ``SceneData`` from absolute paths in a resolved manifest entry."""
+    image_dir = resolved.image_dir
+    if not image_dir.is_dir():
         raise FileNotFoundError(f"Image directory does not exist: {image_dir}")
 
-    if id_map_source == "sam2_json":
-        json_path = (
-            sam2_json_path.expanduser().resolve()
-            if sam2_json_path is not None
-            else default_sam2_auto_masks_path(scene_root, scene)
-        )
-        map_dir, views = build_views_from_sam2_json(image_dir, json_path)
-    elif id_map_source == "npy":
-        map_dir, map_files = load_scene_from_npy(scene_root)
-        pairs = pair_image_and_masks(image_dir, map_files, strategy="stem")
-        views = []
-        for view_name, image_path, map_path in pairs:
-            mask = load_npy_id_map(map_path)
-            mask = _resize_mask_to_image(mask, image_path)
-            views.append(
-                ViewRecord(
-                    view_name=view_name,
-                    image_path=image_path,
-                    mask_path=map_path,
-                    mask=mask,
-                    frame_index=None,
-                )
+    if resolved.id_map_json is not None:
+        if id_map_source != "sam2_json":
+            raise ValueError(
+                f"Manifest scene {resolved.scene_key!r} has id_map_json but id_map_source={id_map_source!r}"
             )
-    elif id_map_source == "png":
-        map_dir, map_files = load_scene_from_png(scene_root, mask_subdir)
-        pairs = pair_image_and_masks(image_dir, map_files, strategy="stem")
+        map_dir, views = build_views_from_sam2_json(image_dir, resolved.id_map_json)
+    elif resolved.id_map_dir is not None:
+        map_dir = resolved.id_map_dir
+        if not map_dir.is_dir():
+            raise FileNotFoundError(f"ID map directory does not exist: {map_dir}")
+        if id_map_source == "sam2_json":
+            raise ValueError(
+                f"Manifest scene {resolved.scene_key!r} has id_map_dir but id_map_source=sam2_json"
+            )
+        map_files = list_mask_paths(map_dir, id_map_source)
+        pairs = pair_image_and_masks(image_dir, map_files, strategy=pair_by)
         views = []
         for view_name, image_path, map_path in pairs:
-            mask = load_mask(map_path)
+            mask = load_npy_id_map(map_path) if id_map_source == "npy" else load_mask(map_path)
             mask = _resize_mask_to_image(mask, image_path)
             views.append(
                 ViewRecord(
@@ -144,28 +117,16 @@ def load_scene(
                 )
             )
     else:
-        raise ValueError(f"Unsupported id_map_source: {id_map_source}")
-
-    object_id_set: set[int] = set()
-    object_to_views: Dict[int, List[ViewRecord]] = {}
-
-    for record in views:
-        unique_ids = np.unique(record.mask)
-        for obj_id in unique_ids:
-            int_id = int(obj_id)
-            if int_id < 0:
-                continue
-            object_id_set.add(int_id)
-            object_to_views.setdefault(int_id, []).append(record)
+        raise ValueError(f"Manifest scene {resolved.scene_key!r} has neither id_map_dir nor id_map_json")
 
     if not views:
-        raise RuntimeError(f"No valid image-mask pairs found under: {scene_root}")
+        raise RuntimeError(f"No valid image-mask pairs found for scene: {resolved.scene_key}")
 
-    object_ids = sorted(object_id_set)
+    object_ids, object_to_views = _build_object_index(views)
     return SceneData(
-        dataset=dataset,
-        scene=scene,
-        scene_root=scene_root,
+        dataset=dataset_id,
+        scene=resolved.scene_key,
+        scene_root=resolved.scene_root,
         image_dir=image_dir,
         mask_dir=map_dir,
         views=views,
