@@ -44,12 +44,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         required=True,
         help="Scene-path manifest JSON (from sample_scenes.py --dataset ...)",
     )
-    parser.add_argument(
-        "--scene-key",
-        type=str,
-        default="",
-        help="Process only this scene_key (e.g. bench or scene_001/foo). Default: all scenes in manifest.",
-    )
     parser.add_argument("--min-pixel-count", type=int, default=300)
     parser.add_argument("--min-pixel-ratio", type=float, default=0.15)
     parser.add_argument("--min-bbox-area-ratio", type=float, default=0.002)
@@ -113,16 +107,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _iter_scene_inputs(manifest_path: Path, scene_key_filter: str) -> list[SceneRunInput]:
+def _iter_scene_inputs(manifest_path: Path) -> list[SceneRunInput]:
     doc = load_scene_paths_manifest(manifest_path)
     dataset_id = manifest_dataset_id(doc)
     id_map_source = manifest_id_map_source(doc)
     pair_by = manifest_pair_by(doc)
+    if not doc.scenes:
+        raise ValueError(f"No scenes found in manifest: {manifest_path}")
     inputs: list[SceneRunInput] = []
     for entry in doc.scenes:
         resolved = resolve_scene_paths(entry, doc.dataset_root)
-        if scene_key_filter and resolved.scene_key != scene_key_filter:
-            continue
         inputs.append(
             SceneRunInput(
                 dataset_id=dataset_id,
@@ -132,10 +126,6 @@ def _iter_scene_inputs(manifest_path: Path, scene_key_filter: str) -> list[Scene
                 pair_by=pair_by,
             )
         )
-    if scene_key_filter and not inputs:
-        raise ValueError(f"scene_key {scene_key_filter!r} not found in manifest: {manifest_path}")
-    if not inputs:
-        raise ValueError(f"No scenes found in manifest: {manifest_path}")
     return inputs
 
 
@@ -192,12 +182,11 @@ async def main_async() -> None:
         ),
     )
 
-    scene_key_filter = (args.scene_key or "").strip()
-    scene_inputs = _iter_scene_inputs(manifest_path, scene_key_filter)
+    scene_inputs = _iter_scene_inputs(manifest_path)
 
     if (cfg.run.target_object_id is not None or cfg.run.single_object_only) and len(scene_inputs) != 1:
         raise ValueError(
-            "--object-id / --single-object requires exactly one scene; use --scene-key to select one scene"
+            "--object-id / --single-object requires a single-scene manifest (exactly one entry in scenes[])"
         )
 
     for scene_input in scene_inputs:
